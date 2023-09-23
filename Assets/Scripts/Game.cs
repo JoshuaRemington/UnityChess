@@ -2,13 +2,17 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+using System;
+
 public class Game : MonoBehaviour
 {
     public GameObject chesspiece;
 
     private GameObject[] board = new GameObject[64]; 
+    Bitboards bitboardObject = new Bitboards();
+    
 
-    //private string currentPlayer = "white";
+    private bool whiteToMove = true;
 
     //private bool gameOver = false;
 
@@ -33,6 +37,7 @@ public class Game : MonoBehaviour
             Create("black_queen", 59), Create("black_king", 60), Create("black_bishop", 61),
             Create("black_knight", 62), Create("black_rook", 63)
         };
+        bitboardObject.initiateBitboardStartPosition();
     }
 
     public GameObject Create(string name, int pos) 
@@ -81,6 +86,7 @@ public class Game : MonoBehaviour
     public GameObject selectedObject;
     Vector3 offset;
     int startloc;
+    Chess c;
     void Update()
     {
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -90,6 +96,12 @@ public class Game : MonoBehaviour
             if (targetObject)
             {
                 selectedObject = targetObject.transform.gameObject;
+                c = selectedObject.GetComponent<Chess>();
+                if(c.isWhite != whiteToMove)
+                {
+                    selectedObject = null;
+                    return;
+                }
                 startloc = TranslateMouseToPos(selectedObject.transform.position);
                 
                 offset = selectedObject.transform.position - mousePosition;
@@ -101,15 +113,14 @@ public class Game : MonoBehaviour
         }
         if (Input.GetMouseButtonUp(0) && selectedObject)
         {
-            Chess c = selectedObject.GetComponent<Chess>();
-            MoveGenerator generate = new MoveGenerator();
             int endloc = this.TranslateMouseToPos(mousePosition);
             Move test = new Move(startloc,endloc);
-            Move[] ar = generate.GenerateMoves(1);
+            Move[] ar = MoveGenerator.GenerateMoves(bitboardObject.bitboards, bitboardObject.whiteTurn);
             bool validMove = test.Contains(ar, test);
             if(validMove)
             {
                 c.SetCoords(endloc);
+                whiteToMove = !whiteToMove;
             } else {
                 c.SetCoords(startloc);
             }
