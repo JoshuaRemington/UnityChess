@@ -114,13 +114,14 @@ public class Game : MonoBehaviour
         if (Input.GetMouseButtonUp(0) && selectedObject)
         {
             int endloc = this.TranslateMouseToPos(mousePosition);
-            Move test = new Move(startloc,endloc);
+            Move play = new Move(startloc,endloc);
             Move[] ar = MoveGenerator.GenerateMoves(bitboardObject.bitboards, bitboardObject.whiteTurn);
-            bool validMove = test.Contains(ar, test);
+            bool validMove = play.Contains(ar, play);
             if(validMove)
             {
                 c.SetCoords(endloc);
                 whiteToMove = !whiteToMove;
+                bitboardObject.playMove(play, c.pieceToBitboardValue);
             } else {
                 c.SetCoords(startloc);
             }

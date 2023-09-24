@@ -22,7 +22,8 @@ public class MoveGenerator
         BlackKing
     */
     public const int MaxNumberMoves = 218;
-    private static Move[] moveList;
+    private static int currIndex;
+    public static Move[] moveList = new Move[MaxNumberMoves];
     
     //if generateForWhite, white is next to move
     private static bool generateForWhite = true; 
@@ -33,6 +34,7 @@ public class MoveGenerator
     public static Move[] GenerateMoves(ulong[] board, bool whiteToPlay)
     {
         moveList = new Move[MaxNumberMoves];
+        currIndex = 0;
         generateForWhite = whiteToPlay;
         occupiedSquaresBitboard = board[0] & board[1];
         emptySquaresBitboard = ~occupiedSquaresBitboard;
@@ -57,28 +59,68 @@ public class MoveGenerator
     private static void GeneratePawnMoves(ulong[] board)
     {
         //for direction, if white, we increase numbers to push pawns, if black, we decrease to push pawns
-        ulong pawnPush = board[startPieceIndex];
-        Bitboards.printBitBoard(board[startPieceIndex]);
-        Bitboards.printBitBoard(pawnPush);
-
+        ulong pawnPush = board[startPieceIndex]; 
+        ulong pawnMoveStraight = new ulong(); //This is for when pawns move directly forward 1 square
+        ulong pawnDoublePush = new ulong();  //This is for when pawns are able to move forward 2 squares
+        ulong pawnCaptureRight = new ulong(); //for when a pawn can capture an opponent piece to the right diagonal of pawn facing direction
+        ulong pawnCaptureLeft = new ulong(); //for when a pawn can capture an opponent piece to the left diagonal of pawn facing direction
+        int pushDirection = generateForWhite ? 1: -1;
+        int pushValue = pushDirection * 8;
         if(generateForWhite)
         {
-            pawnPush |= pawnPush << 8;
-            pawnPush &= emptySquaresBitboard;
-            pawnPush |= pawnPush << 8;
-            pawnPush &= emptySquaresBitboard;
+            pawnMoveStraight |= pawnPush << 8;
+            pawnMoveStraight &= emptySquaresBitboard;
+            pawnDoublePush = pawnMoveStraight & Bitboards.Rank3;
+            pawnDoublePush |= pawnDoublePush << 8;
+            pawnDoublePush &= emptySquaresBitboard;
+            pawnCaptureRight |= pawnPush << 7;
+            pawnCaptureRight &= opponentBitboard;
+            pawnCaptureRight &= Bitboards.notHFile;
+            pawnCaptureLeft |= pawnPush << 9;
+            pawnCaptureLeft &= opponentBitboard;
+            pawnCaptureLeft &= Bitboards.notAFile;
         }
         else
         {
-            pawnPush |= pawnPush >> 8;
-            pawnPush &= emptySquaresBitboard;
-            pawnPush |= pawnPush >> 8;
-            pawnPush &= emptySquaresBitboard;
+            pawnMoveStraight |= pawnPush >> 8;
+            pawnMoveStraight &= emptySquaresBitboard;
+            pawnDoublePush = pawnMoveStraight & Bitboards.Rank6;
+            pawnDoublePush |= pawnDoublePush >> 8;
+            pawnDoublePush &= emptySquaresBitboard;
+            pawnCaptureRight |= pawnPush >> 7;
+            pawnCaptureRight &= opponentBitboard;
+            pawnCaptureRight &= Bitboards.notHFile;
+            pawnCaptureLeft |= pawnPush >> 9;
+            pawnCaptureLeft &= opponentBitboard;
+            pawnCaptureLeft &= Bitboards.notAFile;
         }
-        while(pawnPush != 0)
+        while(pawnMoveStraight != 0)
         {
-            int i = tzcnt(pawnPush);
-            pawnPush &= (pawnPush-1);
+            int i = tzcnt(pawnMoveStraight);
+            pawnMoveStraight &= (pawnMoveStraight-1);
+            Move m = new Move(i-pushValue, i);
+            moveList[currIndex++] = m;
+        }
+        while(pawnDoublePush != 0)
+        {
+            int i = tzcnt(pawnDoublePush);
+            pawnDoublePush &= (pawnDoublePush-1);
+            Move m = new Move(i-(pushValue * 2), i);
+            moveList[currIndex++] = m;
+        }
+        while(pawnCaptureRight != 0)
+        {
+            int i = tzcnt(pawnCaptureRight);
+            pawnCaptureRight &= (pawnCaptureRight-1);
+            Move m = new Move(i-(pushDirection * 7), i);
+            moveList[currIndex++] = m;  
+        }
+        while(pawnCaptureLeft != 0)
+        {
+            int i = tzcnt(pawnCaptureLeft);
+            pawnCaptureLeft &= (pawnCaptureLeft-1);
+            Move m = new Move(i-(pushDirection * 9), i);
+            moveList[currIndex++] = m;
         }
     }
 }
