@@ -74,7 +74,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 1000
   m_Sprite: {fileID: 21300000, guid: 1ae1884e77415db4d8f3d78a4029579f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -99,7 +99,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   controller: {fileID: 0}
-  movePLate: {fileID: 0}
+  isWhite: 0
+  pieceToBitboardValue: 0
   black_queen: {fileID: 21300000, guid: 7a47053fa4ab181439783a883495a2bf, type: 3}
   black_knight: {fileID: 21300000, guid: f4e0f6e0bbafded47a8359ea108ddc95, type: 3}
   black_bishop: {fileID: 21300000, guid: 93398c0ae01f5224eb781489a95ec27b, type: 3}

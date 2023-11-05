@@ -7,12 +7,15 @@ using System;
 public class Game : MonoBehaviour
 {
     public GameObject chesspiece;
+    public GameObject MoveTile;
 
     private GameObject[] board = new GameObject[64]; 
+
+    private GameObject[] moveTiles = new GameObject[64];
     Bitboards bitboardObject = new Bitboards();
-    
 
     private bool whiteToMove = true;
+    private MoveGenerator m = new MoveGenerator();
 
     //private bool gameOver = false;
 
@@ -38,6 +41,8 @@ public class Game : MonoBehaviour
             Create("black_knight", 62), Create("black_rook", 63)
         };
         bitboardObject.initiateBitboardStartPosition();
+        ar = MoveGenerator.GenerateMoves(bitboardObject.bitboards, bitboardObject.whiteTurn);
+        m.StoreMoves();
     }
 
     public GameObject Create(string name, int pos) 
@@ -81,12 +86,39 @@ public class Game : MonoBehaviour
         int pos = col - (row * 8);
         return pos;
     }
+
+    public void createMoveTiles(int pos)
+    {
+        float newZ = -0.9f;
+        for(int i = 0; i < 64; i++) {
+            Move test = new Move(pos, i);
+            if(test.Contains(ar, test))
+                {
+                    moveTiles[i] = Instantiate(MoveTile);
+                    Vector3 newPosition = moveTiles[i].transform.position;
+                    newPosition.z = newZ;
+                    moveTiles[i].transform.position = newPosition;
+                    MoveTile m = moveTiles[i].GetComponent<MoveTile>();
+                    m.Place(i);
+                }
+        }
+    }
+
+    public void deleteMoveTiles()
+    {
+        for(int i = 0; i < 64; i++)
+        {
+            Destroy(moveTiles[i]);
+            moveTiles[i] = null;
+        }
+    }
     
 
     public GameObject selectedObject;
     Vector3 offset;
     int startloc;
     Chess c;
+    Move[] ar;
     void Update()
     {
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -103,6 +135,7 @@ public class Game : MonoBehaviour
                     return;
                 }
                 startloc = TranslateMouseToPos(selectedObject.transform.position);
+                createMoveTiles(startloc);
                 
                 offset = selectedObject.transform.position - mousePosition;
             }
@@ -113,15 +146,25 @@ public class Game : MonoBehaviour
         }
         if (Input.GetMouseButtonUp(0) && selectedObject)
         {
+            deleteMoveTiles();
             int endloc = this.TranslateMouseToPos(mousePosition);
             Move play = new Move(startloc,endloc);
-            Move[] ar = MoveGenerator.GenerateMoves(bitboardObject.bitboards, bitboardObject.whiteTurn);
             bool validMove = play.Contains(ar, play);
             if(validMove)
             {
+                int captureIndex = -1;
+                if(board[endloc]) 
+                {
+                    Chess temp = board[endloc].GetComponent<Chess>();
+                    captureIndex = temp.pieceToBitboardValue;
+                    Destroy(board[endloc]);
+                }    
+                board[endloc] = board[startloc];
+                board[startloc] = null;
                 c.SetCoords(endloc);
                 whiteToMove = !whiteToMove;
-                bitboardObject.playMove(play, c.pieceToBitboardValue);
+                bitboardObject.playMove(play, c.pieceToBitboardValue, captureIndex);
+                ar = MoveGenerator.GenerateMoves(bitboardObject.bitboards, bitboardObject.whiteTurn);
             } else {
                 c.SetCoords(startloc);
             }

@@ -2,9 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using static Unity.Mathematics.math;
 
 public class Bitboards
 {
+    Magic s = new Magic();
     /*  0-13 for bitboard index correlation in array: 0 = white, BlackKing = 13
         White,
         Black,
@@ -36,7 +38,11 @@ public class Bitboards
 	public const ulong Rank8 = Rank7 << 8;
 
 	public const ulong notAFile = ~FileA;
+    public const ulong notBFile = ~(FileA << 1);
+    public const ulong notABFiles = notAFile & notBFile;
 	public const ulong notHFile = ~(FileA << 7);
+    public const ulong notGFile = ~(FileA << 6);
+    public const ulong notGHFiles = notGFile & notHFile;
     
     //standard chess start position with white on top of screen(at index 0)
     //Here is 64 0's: &B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000
@@ -57,6 +63,7 @@ public class Bitboards
         bitboards[11] = 0B1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black rooks
         bitboards[12] = 0B0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black queen
         bitboards[13] = 0B0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black king
+        s.Create();
     }
 
     public static void printBitBoard(ulong val)
@@ -64,7 +71,7 @@ public class Bitboards
         Debug.Log(Convert.ToString((long)val, 2));
     }
 
-    public void setSquare(ref ulong givenbitboard, int index)
+    public static void setSquare(ref ulong givenbitboard, int index)
     {
         givenbitboard |= 1ul << index;
     }
@@ -74,21 +81,7 @@ public class Bitboards
         givenbitboard &= ~(1ul << index);
     }
 
-    public static int getLSB(ref ulong givenbitboard)
-    {
-        ulong input = givenbitboard;
-        const int bits = 64;
-        int n = 1;
-        if ((input >> (bits - 32)) == 0) { n += 32; input <<= 32; }
-        if ((input >> (bits - 16)) == 0) { n += 16; input <<= 16; }
-        if ((input >> (bits - 8)) == 0) { n += 8; input <<= 8; }
-        if ((input >> (bits - 4)) == 0) { n += 4; input <<= 4; }
-        if ((input >> (bits - 2)) == 0) { n += 2; input <<= 2; }
-        int i = n - (int)(input >> (bits - 1));
-        return i;
-    }
-
-    public void playMove(Move m, int arrayIndex)
+    public void playMove(Move m, int arrayIndex, int captureIndex)
     {
         clearSquare(ref this.bitboards[arrayIndex], m.startSquare);
         setSquare(ref this.bitboards[arrayIndex], m.targetSquare);
@@ -96,11 +89,21 @@ public class Bitboards
         {
             clearSquare(ref this.bitboards[0], m.startSquare);
             setSquare(ref this.bitboards[0], m.targetSquare);
+            if(captureIndex != -1)
+            {
+                clearSquare(ref this.bitboards[1], m.targetSquare);
+                clearSquare(ref this.bitboards[captureIndex], m.targetSquare);
+            }
         }
         else
         {
             clearSquare(ref this.bitboards[1], m.startSquare);
             setSquare(ref this.bitboards[1], m.targetSquare);
+            if(captureIndex != -1)
+            {
+                clearSquare(ref this.bitboards[0], m.targetSquare);
+                clearSquare(ref this.bitboards[captureIndex], m.targetSquare);
+            }
         }
         this.whiteTurn = !this.whiteTurn;
     }

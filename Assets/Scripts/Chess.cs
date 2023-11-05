@@ -5,7 +5,6 @@ using UnityEngine;
 public class Chess : MonoBehaviour
 {
     public GameObject controller;
-    public GameObject movePLate;
     public bool isWhite;
     public int pieceToBitboardValue;
     /*  0-13 for bitboard index correlation in array: 0 = white, BlackKing = 13
@@ -59,7 +58,6 @@ public class Chess : MonoBehaviour
         float temp = pos / 8;
         float y = 4.5f - (1.28f * temp);
 
-        this.transform.position = new Vector3(x, y,-1.0f);
+        this.transform.position = new Vector3(x, y, -1.0f);
     }   
 }
-

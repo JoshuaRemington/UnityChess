@@ -168,6 +168,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chesspiece: {fileID: 6003942753035618567, guid: 056f9cefff9484547a8a0f7fbe2e61f3, type: 3}
+  MoveTile: {fileID: 3235510096144301937, guid: 05cbf27b56b47eb4c8c89686ed5e0dd7, type: 3}
+  selectedObject: {fileID: 0}
 --- !u!1 &421723649
 GameObject:
   m_ObjectHideFlags: 0
@@ -246,8 +248,8 @@ Transform:
   m_GameObject: {fileID: 421723649}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 2}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
