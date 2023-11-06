@@ -23,10 +23,10 @@ public class MoveGenerator
     */
     public static ulong[] kingBitboards = new ulong[64];
     public static ulong[] knightBitboards = new ulong[64];
-    public static ulong[] pawnBitboards = new ulong[64];
-    public const int MaxNumberMoves = 218;
+    public static ulong[,] pawnAttacks = new ulong[2,64];
+    public static ulong[] attackedSquares = new ulong[2];
     private static int currIndex;
-    public static Move[] moveList = new Move[MaxNumberMoves];
+    private static int player;
     
     //if generateForWhite, white is next to move
     private static bool generateForWhite = true; 
@@ -34,11 +34,11 @@ public class MoveGenerator
 
     //2-7 = white piece bitboard, 8-13 = black piece bitboards
     private static int startPieceIndex;
-    public static Move[] GenerateMoves(ulong[] board, bool whiteToPlay)
+    public static int GenerateMoves(ref Move[] moveList, ulong[] board, bool whiteToPlay)
     {
-        moveList = new Move[MaxNumberMoves];
         currIndex = 0;
         generateForWhite = whiteToPlay;
+        player = generateForWhite ? 0:1;
         occupiedSquaresBitboard = board[0] | board[1];
         emptySquaresBitboard = ~occupiedSquaresBitboard;
         if(generateForWhite)
@@ -53,106 +53,82 @@ public class MoveGenerator
             opponentBitboard = board[0];
             startPieceIndex = 8;
         }
-        GeneratePawnMoves(board);
-        GenerateKnightMoves(board);
-        GenerateSlidingMoves(board);
-        GenerateKingMoves(board);
+        GeneratePawnMoves(ref moveList, board);
+        GenerateKnightMoves(ref moveList, board);
+        GenerateSlidingMoves(ref moveList, board);
+        GenerateKingMoves(ref moveList, board);
         
-        return moveList;
+        return currIndex;
     }
 
-    private static void GeneratePawnMoves(ulong[] board)
+    private static void GeneratePawnMoves(ref Move[] moveList, ulong[] board)
     {
-        //for direction, if white, we increase numbers to push pawns, if black, we decrease to push pawns
-        ulong pawnPush = board[startPieceIndex++]; 
-        ulong pawnMoveStraight = new ulong(); //This is for when pawns move directly forward 1 square
-        ulong pawnDoublePush = new ulong();  //This is for when pawns are able to move forward 2 squares
-        ulong pawnCaptureRight = new ulong(); //for when a pawn can capture an opponent piece to the right diagonal of pawn facing direction
-        ulong pawnCaptureLeft = new ulong(); //for when a pawn can capture an opponent piece to the left diagonal of pawn facing direction
-        int pushDirection = generateForWhite ? 1: -1;
-        int pushValue = pushDirection * 8;
+        ulong pawnBoard = board[startPieceIndex++];
+        ulong push = new ulong();
+        ulong doublePush = new ulong();
+        int pushDirection;
         if(generateForWhite)
         {
-            pawnMoveStraight |= pawnPush << 8;
-            pawnMoveStraight &= emptySquaresBitboard;
-            pawnDoublePush = pawnMoveStraight & Bitboards.Rank3;
-            pawnDoublePush = pawnDoublePush << 8;
-            pawnDoublePush &= emptySquaresBitboard;
-            pawnCaptureRight |= pawnPush << 7;
-            pawnCaptureRight &= opponentBitboard;
-            pawnCaptureRight &= Bitboards.notHFile;
-            pawnCaptureLeft |= pawnPush << 9;
-            pawnCaptureLeft &= opponentBitboard;
-            pawnCaptureLeft &= Bitboards.notAFile;
+            pushDirection = 8;
+            push |= pawnBoard << 8;
+            push &= emptySquaresBitboard;
+            doublePush = push & Bitboards.Rank3;
+            doublePush = doublePush << 8;
+            doublePush &= emptySquaresBitboard;
         }
         else
         {
-            pawnMoveStraight |= pawnPush >> 8;
-            pawnMoveStraight &= emptySquaresBitboard;
-            pawnDoublePush = pawnMoveStraight & Bitboards.Rank6;
-            pawnDoublePush = pawnDoublePush >> 8;
-            pawnDoublePush &= emptySquaresBitboard;
-            pawnCaptureRight |= pawnPush >> 7;
-            pawnCaptureRight &= opponentBitboard;
-            pawnCaptureRight &= Bitboards.notHFile;
-            pawnCaptureLeft |= pawnPush >> 9;
-            pawnCaptureLeft &= opponentBitboard;
-            pawnCaptureLeft &= Bitboards.notAFile;
+            pushDirection = -8;
+            push |= pawnBoard >> 8;
+            push &= emptySquaresBitboard;
+            doublePush = push & Bitboards.Rank6;
+            doublePush = doublePush >> 8;
+            doublePush &= emptySquaresBitboard;
         }
-        while(pawnMoveStraight != 0)
-        { 
-            int i = tzcnt(pawnMoveStraight);
-            pawnMoveStraight &= (pawnMoveStraight-1);
-            //Debug.Log(i-pushValue);
-            Move m = new Move(i-pushValue, i);
+        while(push != 0)
+        {
+            int j = tzcnt(push);
+            push &= push-1;
+            Move m = new Move(j-(pushDirection), j);
             moveList[currIndex++] = m;
         }
-        while(pawnDoublePush != 0)
+        while(doublePush != 0)
         {
-            int i = tzcnt(pawnDoublePush);
-            pawnDoublePush &= (pawnDoublePush-1);
-            //Debug.Log(i-(pushValue*2));
-            Move m = new Move(i-(pushValue * 2), i);
-            moveList[currIndex++] = m;
+                int j = tzcnt(doublePush);
+                doublePush &= doublePush - 1;
+                Move m = new Move(j-(pushDirection * 2), j);
+                moveList[currIndex++] = m;
         }
-        while(pawnCaptureRight != 0)
+
+        while(pawnBoard != 0)
         {
-            int i = tzcnt(pawnCaptureRight);
-            pawnCaptureRight &= (pawnCaptureRight-1);
-           // Debug.Log(i-(pushDirection * 7));
-            Move m = new Move(i-(pushDirection * 7), i);
-            moveList[currIndex++] = m;  
-        }
-        while(pawnCaptureLeft != 0)
-        {
-            int i = tzcnt(pawnCaptureLeft);
-            pawnCaptureLeft &= (pawnCaptureLeft-1);
-            //Debug.Log(i-(pushDirection * 9));
-            Move m = new Move(i-(pushDirection * 9), i);
-            moveList[currIndex++] = m;
+            int i = tzcnt(pawnBoard);
+            pawnBoard &= pawnBoard - 1;
+            ulong attacks;
+            attacks = pawnAttacks[player, i];
+            attacks &= opponentBitboard;
+            attackedSquares[player] |= attacks;
+
+            while(attacks != 0)
+            {
+                int j = tzcnt(attacks);
+                attacks &= attacks - 1;
+                Move m = new Move(i, j);
+                moveList[currIndex++] = m;
+            }
         }
     }
 
-    private static void GenerateKnightMoves(ulong[] board)
+    private static void GenerateKnightMoves(ref Move[] moveList, ulong[] board)
     {
         // increments, 6, 10, 15, 17
         ulong knightBoard = board[startPieceIndex++];
 
         while(knightBoard != 0)
         {
-            ulong knightMove = new ulong();
-            ulong knightSquare = new ulong();
             int i = tzcnt(knightBoard);
             knightBoard &= (knightBoard-1);
-            Bitboards.setSquare(ref knightSquare, i);
-            knightMove |= (knightSquare >> 6) & Bitboards.notABFiles;
-            knightMove |= (knightSquare >> 10) & Bitboards.notGHFiles;
-            knightMove |= (knightSquare >> 15) & Bitboards.notAFile;
-            knightMove |= (knightSquare >> 17) & Bitboards.notHFile;
-            knightMove |= (knightSquare << 6) & Bitboards.notGHFiles;
-            knightMove |= (knightSquare << 10) & Bitboards.notABFiles;
-            knightMove |= (knightSquare << 15) & Bitboards.notHFile;
-            knightMove |= (knightSquare << 17) & Bitboards.notAFile;
+            ulong knightMove = knightBitboards[i];
             knightMove &= ~friendlyBitboard;
             while(knightMove != 0)
             {
@@ -163,12 +139,11 @@ public class MoveGenerator
             }
         }
     }
-    private static void GenerateSlidingMoves(ulong[] board) {
+    private static void GenerateSlidingMoves(ref Move[] moveList, ulong[] board) {
         ulong diagonalBoard = board[startPieceIndex++];
         ulong straightBoard = board[startPieceIndex++];
         diagonalBoard |= board[startPieceIndex];
         straightBoard |= board[startPieceIndex++];
-        occupiedSquaresBitboard = board[0] | board[1];
 
         while(diagonalBoard != 0) {
             ulong diagonalMove = new ulong();
@@ -197,7 +172,7 @@ public class MoveGenerator
             }
         }
     }
-    private static void GenerateKingMoves(ulong[] board)
+    private static void GenerateKingMoves(ref Move[] moveList, ulong[] board)
     {
         ulong kingBoard = board[startPieceIndex];
         int i = tzcnt(kingBoard);
@@ -216,20 +191,39 @@ public class MoveGenerator
     {
         for(int i = 0; i < 64; i++)
         {
-            ulong knightBitboard = 1ul << i;
-            ulong kingBitboard = knightBitboard;
-            ulong pawnBitboard = knightBitboard;
+            ulong tempBitboard = 1ul << i;
 
             ulong kingMoves = new ulong();
-            kingMoves |= kingBitboard << 1 & Bitboards.notAFile;
-            kingMoves |= kingBitboard << 7 & Bitboards.notHFile;
-            kingMoves |= kingBitboard << 8;
-            kingMoves |= kingBitboard << 9 & Bitboards.notAFile;
-            kingMoves |= kingBitboard >> 1 & Bitboards.notHFile;
-            kingMoves |= kingBitboard >> 7 & Bitboards.notAFile;
-            kingMoves |= kingBitboard >> 8;
-            kingMoves |= kingBitboard >> 9 & Bitboards.notHFile;
+            kingMoves |= tempBitboard << 1 & Bitboards.notAFile;
+            kingMoves |= tempBitboard << 7 & Bitboards.notHFile;
+            kingMoves |= tempBitboard << 8;
+            kingMoves |= tempBitboard << 9 & Bitboards.notAFile;
+            kingMoves |= tempBitboard >> 1 & Bitboards.notHFile;
+            kingMoves |= tempBitboard >> 7 & Bitboards.notAFile;
+            kingMoves |= tempBitboard >> 8;
+            kingMoves |= tempBitboard >> 9 & Bitboards.notHFile;
             kingBitboards[i] = kingMoves;
+
+            ulong knightMoves = new ulong();
+            knightMoves |= (tempBitboard >> 6) & Bitboards.notABFiles;
+            knightMoves |= (tempBitboard >> 10) & Bitboards.notGHFiles;
+            knightMoves |= (tempBitboard >> 15) & Bitboards.notAFile;
+            knightMoves |= (tempBitboard >> 17) & Bitboards.notHFile;
+            knightMoves |= (tempBitboard << 6) & Bitboards.notGHFiles;
+            knightMoves |= (tempBitboard << 10) & Bitboards.notABFiles;
+            knightMoves |= (tempBitboard << 15) & Bitboards.notHFile;
+            knightMoves |= (tempBitboard << 17) & Bitboards.notAFile;
+            knightBitboards[i] = knightMoves;
+
+            ulong whitePawnAttackMoves = new ulong();
+            whitePawnAttackMoves |= tempBitboard << 7 & Bitboards.notHFile;
+            whitePawnAttackMoves |= tempBitboard << 9 & Bitboards.notAFile;
+            pawnAttacks[0,i] = whitePawnAttackMoves;
+
+            ulong blackPawnAttackMoves = new ulong();
+            blackPawnAttackMoves |= tempBitboard >> 7 & Bitboards.notAFile;
+            blackPawnAttackMoves |= tempBitboard >> 9 & Bitboards.notHFile;
+            pawnAttacks[1,i] = blackPawnAttackMoves;
         }
     }
 }

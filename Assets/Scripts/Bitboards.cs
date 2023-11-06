@@ -6,7 +6,6 @@ using static Unity.Mathematics.math;
 
 public class Bitboards
 {
-    Magic s = new Magic();
     /*  0-13 for bitboard index correlation in array: 0 = white, BlackKing = 13
         White,
         Black,
@@ -63,7 +62,6 @@ public class Bitboards
         bitboards[11] = 0B1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black rooks
         bitboards[12] = 0B0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black queen
         bitboards[13] = 0B0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black king
-        s.Create();
     }
 
     public static void printBitBoard(ulong val)
@@ -103,6 +101,36 @@ public class Bitboards
             {
                 clearSquare(ref this.bitboards[0], m.targetSquare);
                 clearSquare(ref this.bitboards[captureIndex], m.targetSquare);
+            }
+        }
+        this.whiteTurn = !this.whiteTurn;
+    }
+
+    public void undoMove(Move m, int arrayIndex, int captureIndex)
+    {
+        clearSquare(ref this.bitboards[arrayIndex], m.targetSquare);
+        setSquare(ref this.bitboards[arrayIndex], m.startSquare);
+        
+        if (this.whiteTurn)
+        {
+            clearSquare(ref this.bitboards[0], m.targetSquare);
+            setSquare(ref this.bitboards[0], m.startSquare);
+            
+            if (captureIndex != -1)
+            {
+                setSquare(ref this.bitboards[1], m.targetSquare);
+                setSquare(ref this.bitboards[captureIndex], m.targetSquare);
+            }
+        }
+        else
+        {
+            clearSquare(ref this.bitboards[1], m.targetSquare);
+            setSquare(ref this.bitboards[1], m.startSquare);
+            
+            if (captureIndex != -1)
+            {
+                setSquare(ref this.bitboards[0], m.targetSquare);
+                setSquare(ref this.bitboards[captureIndex], m.targetSquare);
             }
         }
         this.whiteTurn = !this.whiteTurn;

@@ -16,6 +16,7 @@ public class Game : MonoBehaviour
 
     private bool whiteToMove = true;
     private MoveGenerator m = new MoveGenerator();
+    private Magic s = new Magic();
 
     //private bool gameOver = false;
 
@@ -41,8 +42,10 @@ public class Game : MonoBehaviour
             Create("black_knight", 62), Create("black_rook", 63)
         };
         bitboardObject.initiateBitboardStartPosition();
-        ar = MoveGenerator.GenerateMoves(bitboardObject.bitboards, bitboardObject.whiteTurn);
+        s.Create();
         m.StoreMoves();
+
+        MoveGenerator.GenerateMoves(ref ar, bitboardObject.bitboards, bitboardObject.whiteTurn);
     }
 
     public GameObject Create(string name, int pos) 
@@ -118,7 +121,7 @@ public class Game : MonoBehaviour
     Vector3 offset;
     int startloc;
     Chess c;
-    Move[] ar;
+    Move[] ar = new Move[256];
     void Update()
     {
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -164,11 +167,38 @@ public class Game : MonoBehaviour
                 c.SetCoords(endloc);
                 whiteToMove = !whiteToMove;
                 bitboardObject.playMove(play, c.pieceToBitboardValue, captureIndex);
-                ar = MoveGenerator.GenerateMoves(bitboardObject.bitboards, bitboardObject.whiteTurn);
+                MoveGenerator.GenerateMoves(ref ar,bitboardObject.bitboards, bitboardObject.whiteTurn);
+                Bitboards.printBitBoard(bitboardObject.bitboards[0]);
+                Bitboards.printBitBoard(bitboardObject.bitboards[2]);
+                bitboardObject.undoMove(play, c.pieceToBitboardValue, captureIndex);
+                Bitboards.printBitBoard(bitboardObject.bitboards[0]);
+                Bitboards.printBitBoard(bitboardObject.bitboards[2]);
             } else {
                 c.SetCoords(startloc);
             }
             selectedObject = null;
         }
     }
+/*
+    public ulong Perft(int depth)
+    {
+        Move[] test = new Move[256];
+        int n_moves, i;
+        ulong nodes = 0;
+
+        if(depth == 0)
+            return 1ul;
+
+        n_moves = MoveGenerator.GenerateMoves(ref test, bitboardObject.bitboards, whiteToMove);
+        whiteToMove = !whiteToMove;
+        for(i = 0; i < n_moves; i++)
+        {
+            Move play = test[i];
+            bitboardObject.playMove(play, c.pieceToBitboardValue, captureIndex);
+            nodes += Perft(depth-1);
+            bitboardObject.undoMove(play, c.pieceToBitboardValue, captureIndex);
+        }
+        return nodes;
+    }
+    */
 }
