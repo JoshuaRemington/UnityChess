@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 using System;
 
@@ -8,6 +9,8 @@ public class Game : MonoBehaviour
 {
     public GameObject chesspiece;
     public GameObject MoveTile;
+
+    public Text text;
 
     private GameObject[] board = new GameObject[64]; 
 
@@ -44,8 +47,15 @@ public class Game : MonoBehaviour
         bitboardObject.initiateBitboardStartPosition();
         s.Create();
         m.StoreMoves();
-
-        MoveGenerator.GenerateMoves(ref ar, bitboardObject.bitboards, bitboardObject.whiteTurn);
+        DateTime startTime = DateTime.Now;
+        string temp = Perft(4).ToString();
+        DateTime endTime = DateTime.Now;
+        TimeSpan elapsedTime = endTime - startTime;
+        double timeTaken = elapsedTime.TotalMilliseconds;
+        
+        string temp2 = "\nExecution Time: \n" + timeTaken.ToString();
+        text.text = temp + temp2;
+        MoveGenerator.GenerateMoves(ref ar, bitboardObject);
     }
 
     public GameObject Create(string name, int pos) 
@@ -95,7 +105,7 @@ public class Game : MonoBehaviour
         float newZ = -0.9f;
         for(int i = 0; i < 64; i++) {
             Move test = new Move(pos, i);
-            if(test.Contains(ar, test))
+            if(test.Contains(ar, test) != -1)
                 {
                     moveTiles[i] = Instantiate(MoveTile);
                     Vector3 newPosition = moveTiles[i].transform.position;
@@ -152,8 +162,9 @@ public class Game : MonoBehaviour
             deleteMoveTiles();
             int endloc = this.TranslateMouseToPos(mousePosition);
             Move play = new Move(startloc,endloc);
-            bool validMove = play.Contains(ar, play);
-            if(validMove)
+            int validMove = play.Contains(ar, play);
+            play.flag = validMove;
+            if(validMove != -1)
             {
                 int captureIndex = -1;
                 if(board[endloc]) 
@@ -166,20 +177,16 @@ public class Game : MonoBehaviour
                 board[startloc] = null;
                 c.SetCoords(endloc);
                 whiteToMove = !whiteToMove;
-                bitboardObject.playMove(play, c.pieceToBitboardValue, captureIndex);
-                MoveGenerator.GenerateMoves(ref ar,bitboardObject.bitboards, bitboardObject.whiteTurn);
-                Bitboards.printBitBoard(bitboardObject.bitboards[0]);
-                Bitboards.printBitBoard(bitboardObject.bitboards[2]);
-                bitboardObject.undoMove(play, c.pieceToBitboardValue, captureIndex);
-                Bitboards.printBitBoard(bitboardObject.bitboards[0]);
-                Bitboards.printBitBoard(bitboardObject.bitboards[2]);
+                bitboardObject.playMove(play);
+                MoveGenerator.lastMove = play;
+                MoveGenerator.GenerateMoves(ref ar,bitboardObject);
             } else {
                 c.SetCoords(startloc);
             }
             selectedObject = null;
         }
     }
-/*
+
     public ulong Perft(int depth)
     {
         Move[] test = new Move[256];
@@ -189,16 +196,16 @@ public class Game : MonoBehaviour
         if(depth == 0)
             return 1ul;
 
-        n_moves = MoveGenerator.GenerateMoves(ref test, bitboardObject.bitboards, whiteToMove);
+        n_moves = MoveGenerator.GenerateMoves(ref test, bitboardObject);
         whiteToMove = !whiteToMove;
         for(i = 0; i < n_moves; i++)
         {
             Move play = test[i];
-            bitboardObject.playMove(play, c.pieceToBitboardValue, captureIndex);
+            int captureIndex = bitboardObject.playMove(play);
             nodes += Perft(depth-1);
-            bitboardObject.undoMove(play, c.pieceToBitboardValue, captureIndex);
+            bitboardObject.undoMove(play,captureIndex);
         }
+        whiteToMove = !whiteToMove;
         return nodes;
     }
-    */
 }

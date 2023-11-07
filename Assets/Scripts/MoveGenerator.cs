@@ -34,39 +34,41 @@ public class MoveGenerator
 
     //2-7 = white piece bitboard, 8-13 = black piece bitboards
     private static int startPieceIndex;
-    public static int GenerateMoves(ref Move[] moveList, ulong[] board, bool whiteToPlay)
+    public static Move lastMove = new Move(-1,-1);
+    public static int GenerateMoves(ref Move[] moveList, Bitboards bitboardObject)
     {
+        moveList = new Move[256];
         currIndex = 0;
-        generateForWhite = whiteToPlay;
+        generateForWhite = bitboardObject.whiteTurn;
         player = generateForWhite ? 0:1;
-        occupiedSquaresBitboard = board[0] | board[1];
+        occupiedSquaresBitboard = bitboardObject.bitboards[0] | bitboardObject.bitboards[1];
         emptySquaresBitboard = ~occupiedSquaresBitboard;
         if(generateForWhite)
         {
-            friendlyBitboard = board[0];
-            opponentBitboard = board[1];
+            friendlyBitboard = bitboardObject.bitboards[0];
+            opponentBitboard = bitboardObject.bitboards[1];
             startPieceIndex = 2;
 
         }
         else{
-            friendlyBitboard = board[1];
-            opponentBitboard = board[0];
+            friendlyBitboard = bitboardObject.bitboards[1];
+            opponentBitboard = bitboardObject.bitboards[0];
             startPieceIndex = 8;
         }
-        GeneratePawnMoves(ref moveList, board);
-        GenerateKnightMoves(ref moveList, board);
-        GenerateSlidingMoves(ref moveList, board);
-        GenerateKingMoves(ref moveList, board);
-        
+        GeneratePawnMoves(ref moveList, bitboardObject);
+        GenerateKnightMoves(ref moveList, bitboardObject);
+        GenerateSlidingMoves(ref moveList, bitboardObject);
+        GenerateKingMoves(ref moveList, bitboardObject);
         return currIndex;
     }
 
-    private static void GeneratePawnMoves(ref Move[] moveList, ulong[] board)
+    private static void GeneratePawnMoves(ref Move[] moveList, Bitboards bitboardObject)
     {
-        ulong pawnBoard = board[startPieceIndex++];
+        ulong pawnBoard = bitboardObject.bitboards[startPieceIndex++];
         ulong push = new ulong();
         ulong doublePush = new ulong();
         int pushDirection;
+
         if(generateForWhite)
         {
             pushDirection = 8;
@@ -96,8 +98,23 @@ public class MoveGenerator
         {
                 int j = tzcnt(doublePush);
                 doublePush &= doublePush - 1;
-                Move m = new Move(j-(pushDirection * 2), j);
+                Move m = new Move(j-(pushDirection * 2), j, Move.PawnTwoUpFlag);
                 moveList[currIndex++] = m;
+        }
+
+        if(lastMove.flag == Move.PawnTwoUpFlag)
+        {
+            ulong enPassantSquares = 1ul << lastMove.targetSquare+1;
+            enPassantSquares |= 1ul << lastMove.targetSquare-1;
+            enPassantSquares &= pawnBoard;
+            while(enPassantSquares != 0)
+            {
+                int i = tzcnt(enPassantSquares);
+                enPassantSquares &= enPassantSquares-1;
+                int landingSquare = lastMove.targetSquare + pushDirection;
+                Move m = new Move(i, landingSquare, Move.EnPassantCaptureFlag);
+                moveList[currIndex++] = m;
+            }
         }
 
         while(pawnBoard != 0)
@@ -119,10 +136,10 @@ public class MoveGenerator
         }
     }
 
-    private static void GenerateKnightMoves(ref Move[] moveList, ulong[] board)
+    private static void GenerateKnightMoves(ref Move[] moveList, Bitboards bitboardObject)
     {
         // increments, 6, 10, 15, 17
-        ulong knightBoard = board[startPieceIndex++];
+        ulong knightBoard = bitboardObject.bitboards[startPieceIndex++];
 
         while(knightBoard != 0)
         {
@@ -139,11 +156,11 @@ public class MoveGenerator
             }
         }
     }
-    private static void GenerateSlidingMoves(ref Move[] moveList, ulong[] board) {
-        ulong diagonalBoard = board[startPieceIndex++];
-        ulong straightBoard = board[startPieceIndex++];
-        diagonalBoard |= board[startPieceIndex];
-        straightBoard |= board[startPieceIndex++];
+    private static void GenerateSlidingMoves(ref Move[] moveList, Bitboards bitboardObject) {
+        ulong diagonalBoard = bitboardObject.bitboards[startPieceIndex++];
+        ulong straightBoard = bitboardObject.bitboards[startPieceIndex++];
+        diagonalBoard |= bitboardObject.bitboards[startPieceIndex];
+        straightBoard |= bitboardObject.bitboards[startPieceIndex++];
 
         while(diagonalBoard != 0) {
             ulong diagonalMove = new ulong();
@@ -172,9 +189,9 @@ public class MoveGenerator
             }
         }
     }
-    private static void GenerateKingMoves(ref Move[] moveList, ulong[] board)
+    private static void GenerateKingMoves(ref Move[] moveList, Bitboards bitboardObject)
     {
-        ulong kingBoard = board[startPieceIndex];
+        ulong kingBoard = bitboardObject.bitboards[startPieceIndex];
         int i = tzcnt(kingBoard);
         ulong kingMoves = kingBitboards[i];
         kingMoves &= ~friendlyBitboard;
@@ -184,6 +201,37 @@ public class MoveGenerator
             kingMoves &= kingMoves - 1;
             Move m = new Move(i, j);
             moveList[currIndex++] = m;
+        }
+
+        if(generateForWhite)
+        {
+            ulong test1 = occupiedSquaresBitboard & bitboardObject.whiteKingCastleMask;
+            ulong test2 = occupiedSquaresBitboard & bitboardObject.whiteQueenCastleMask;
+            if(bitboardObject.whiteKingCastle && test1 == 0)
+            {
+                Move m = new Move(4, 6, Move.CastleFlag);
+                moveList[currIndex++] = m;
+            }
+            if(bitboardObject.whiteQueenCastle && test2 == 0)
+            {
+                Move m = new Move(4, 2, Move.CastleFlag);
+                moveList[currIndex++] = m;
+            }
+        }
+        else
+        {
+            ulong test1 = occupiedSquaresBitboard & bitboardObject.blackKingCastleMask;
+            ulong test2 = occupiedSquaresBitboard & bitboardObject.blackQueenCastleMask;
+            if(bitboardObject.blackKingCastle && test1 == 0)
+            {
+                Move m = new Move(60, 62, Move.CastleFlag);
+                moveList[currIndex++] = m;
+            }
+            if(bitboardObject.blackQueenCastle && test2 == 0)
+            {
+                Move m = new Move(60, 58, Move.CastleFlag);
+                moveList[currIndex++] = m;
+            }
         }
     }
 

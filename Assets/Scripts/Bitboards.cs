@@ -7,22 +7,30 @@ using static Unity.Mathematics.math;
 public class Bitboards
 {
     /*  0-13 for bitboard index correlation in array: 0 = white, BlackKing = 13
-        White,
-        Black,
-        WhitePawn,
-        WhiteKnight,
-        WhiteBishop,
-        WhiteRook,
-        WhiteQueen,
-        WhiteKing,
-        BlackPawn,
-        BlackKnight,
-        BlackBishop,
-        BlackRook,
-        BlackQueen,
-        BlackKing
+        0  White,
+        1  Black,
+        2  WhitePawn,
+        3  WhiteKnight,
+        4  WhiteBishop,
+        5  WhiteRook,
+        6  WhiteQueen,
+        7  WhiteKing,
+        8  BlackPawn,
+        9 BlackKnight,
+        10 BlackBishop,
+        11 BlackRook,
+        12 BlackQueen,
+        13 BlackKing
     */
     public ulong[] bitboards = new ulong[14];
+    public int[] findIndex =   {5,3,4,6,7,4,3,5,
+                                2,2,2,2,2,2,2,2,
+                                0,0,0,0,0,0,0,0,
+                                0,0,0,0,0,0,0,0,
+                                0,0,0,0,0,0,0,0,
+                                0,0,0,0,0,0,0,0,
+                                8,8,8,8,8,8,8,8,
+                                11,9,10,12,13,10,9,11};
     public bool whiteTurn = true;
 
     public const ulong FileA = 0x101010101010101;
@@ -42,6 +50,15 @@ public class Bitboards
 	public const ulong notHFile = ~(FileA << 7);
     public const ulong notGFile = ~(FileA << 6);
     public const ulong notGHFiles = notGFile & notHFile;
+
+    public bool whiteQueenCastle = true;
+    public ulong whiteQueenCastleMask;
+    public bool whiteKingCastle = true;
+    public ulong whiteKingCastleMask;
+    public bool blackQueenCastle = true;
+    public ulong blackQueenCastleMask;
+    public bool blackKingCastle = true;
+    public ulong blackKingCastleMask;
     
     //standard chess start position with white on top of screen(at index 0)
     //Here is 64 0's: &B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000
@@ -62,6 +79,7 @@ public class Bitboards
         bitboards[11] = 0B1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black rooks
         bitboards[12] = 0B0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black queen
         bitboards[13] = 0B0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black king
+        createCastlingMasks();
     }
 
     public static void printBitBoard(ulong val)
@@ -79,61 +97,81 @@ public class Bitboards
         givenbitboard &= ~(1ul << index);
     }
 
-    public void playMove(Move m, int arrayIndex, int captureIndex)
+    public int playMove(Move m)
     {
+        int arrayIndex = findIndex[m.startSquare];  
+        int captureIndex = findIndex[m.targetSquare];
+        int friendlyIndex = 1;
+        int enemyIndex = 0;
+        findIndex[m.targetSquare] = findIndex[m.startSquare];
+        findIndex[m.startSquare] = 0;
+        if(arrayIndex < 8)  {friendlyIndex = 0; enemyIndex = 1;}
         clearSquare(ref this.bitboards[arrayIndex], m.startSquare);
         setSquare(ref this.bitboards[arrayIndex], m.targetSquare);
-        if(this.whiteTurn)
+        clearSquare(ref this.bitboards[friendlyIndex], m.startSquare);
+        setSquare(ref this.bitboards[friendlyIndex], m.targetSquare);
+        if(captureIndex != 0)
         {
-            clearSquare(ref this.bitboards[0], m.startSquare);
-            setSquare(ref this.bitboards[0], m.targetSquare);
-            if(captureIndex != -1)
-            {
-                clearSquare(ref this.bitboards[1], m.targetSquare);
-                clearSquare(ref this.bitboards[captureIndex], m.targetSquare);
-            }
+            clearSquare(ref this.bitboards[enemyIndex], m.targetSquare);
+            clearSquare(ref this.bitboards[captureIndex], m.targetSquare);
         }
-        else
+        else if(m.flag == Move.EnPassantCaptureFlag)
         {
-            clearSquare(ref this.bitboards[1], m.startSquare);
-            setSquare(ref this.bitboards[1], m.targetSquare);
-            if(captureIndex != -1)
-            {
-                clearSquare(ref this.bitboards[0], m.targetSquare);
-                clearSquare(ref this.bitboards[captureIndex], m.targetSquare);
-            }
+            captureIndex = findIndex[m.enPassantSquare];
+            clearSquare(ref this.bitboards[enemyIndex], m.enPassantSquare);
+            clearSquare(ref this.bitboards[captureIndex], m.enPassantSquare);
+            findIndex[m.enPassantSquare] = 0;
+        }
+        else if(m.flag == Move.CastleFlag)
+        {
+            ;
         }
         this.whiteTurn = !this.whiteTurn;
+        return captureIndex;
     }
 
-    public void undoMove(Move m, int arrayIndex, int captureIndex)
+    public void undoMove(Move m, int captureIndex)
     {
+        this.whiteTurn = !this.whiteTurn;
+        int arrayIndex = findIndex[m.targetSquare];
+        int friendlyIndex = 1;
+        int enemyIndex = 0;
+        findIndex[m.startSquare] = findIndex[m.targetSquare];
+        findIndex[m.targetSquare] = captureIndex;
+        if(arrayIndex < 8)  {friendlyIndex = 0; enemyIndex = 1;}
         clearSquare(ref this.bitboards[arrayIndex], m.targetSquare);
         setSquare(ref this.bitboards[arrayIndex], m.startSquare);
+    
+        clearSquare(ref this.bitboards[friendlyIndex], m.targetSquare);
+        setSquare(ref this.bitboards[friendlyIndex], m.startSquare);
+        if(m.flag == Move.EnPassantCaptureFlag)
+        {
+            setSquare(ref this.bitboards[enemyIndex], m.enPassantSquare);
+            setSquare(ref this.bitboards[captureIndex], m.enPassantSquare);
+            findIndex[m.enPassantSquare] = captureIndex;
+        }  
+        else if (captureIndex != 0)
+        {
+            setSquare(ref this.bitboards[enemyIndex], m.targetSquare);
+            setSquare(ref this.bitboards[captureIndex], m.targetSquare);
+        }
+    }
+
+    public void createCastlingMasks()
+    {
+        whiteKingCastleMask = 1UL << 5;
+        whiteKingCastleMask |= 1UL << 6;
         
-        if (this.whiteTurn)
-        {
-            clearSquare(ref this.bitboards[0], m.targetSquare);
-            setSquare(ref this.bitboards[0], m.startSquare);
-            
-            if (captureIndex != -1)
-            {
-                setSquare(ref this.bitboards[1], m.targetSquare);
-                setSquare(ref this.bitboards[captureIndex], m.targetSquare);
-            }
-        }
-        else
-        {
-            clearSquare(ref this.bitboards[1], m.targetSquare);
-            setSquare(ref this.bitboards[1], m.startSquare);
-            
-            if (captureIndex != -1)
-            {
-                setSquare(ref this.bitboards[0], m.targetSquare);
-                setSquare(ref this.bitboards[captureIndex], m.targetSquare);
-            }
-        }
-        this.whiteTurn = !this.whiteTurn;
+        whiteQueenCastleMask = 1UL << 1;
+        whiteQueenCastleMask |= 1UL << 2;
+        whiteQueenCastleMask |= 1UL << 3;
+
+        blackKingCastleMask = 1UL << 61;
+        blackKingCastleMask |= 1UL << 62;
+        
+        blackQueenCastleMask = 1UL << 57;
+        blackQueenCastleMask |= 1UL << 58;
+        blackQueenCastleMask |= 1UL << 59;
     }
 }
 
