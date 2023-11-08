@@ -105,7 +105,7 @@ public class Game : MonoBehaviour
         float newZ = -0.9f;
         for(int i = 0; i < 64; i++) {
             Move test = new Move(pos, i);
-            if(test.Contains(ar, test) != -1)
+            if(test.Contains(ar, test) != Move.nullMove)
                 {
                     moveTiles[i] = Instantiate(MoveTile);
                     Vector3 newPosition = moveTiles[i].transform.position;
@@ -162,22 +162,31 @@ public class Game : MonoBehaviour
             deleteMoveTiles();
             int endloc = this.TranslateMouseToPos(mousePosition);
             Move play = new Move(startloc,endloc);
-            int validMove = play.Contains(ar, play);
-            play.flag = validMove;
-            if(validMove != -1)
+            play = play.Contains(ar, play);
+            if(play == Move.nullMove)
             {
-                int captureIndex = -1;
+                //int captureIndex = -1;
                 if(board[endloc]) 
                 {
                     Chess temp = board[endloc].GetComponent<Chess>();
-                    captureIndex = temp.pieceToBitboardValue;
+                    //captureIndex = temp.pieceToBitboardValue;
                     Destroy(board[endloc]);
-                }    
+                }
                 board[endloc] = board[startloc];
                 board[startloc] = null;
                 c.SetCoords(endloc);
                 whiteToMove = !whiteToMove;
-                bitboardObject.playMove(play);
+                int castleSquare = bitboardObject.playMove(play);
+                if(play.flag == 2)
+                {
+                    switch(castleSquare)
+                    {
+                        case 0: board[3] = board[0]; board[0] = null; c = board[3].GetComponent<Chess>(); c.SetCoords(3); break;
+                        case 7: board[5] = board[7]; board[7] = null; c = board[5].GetComponent<Chess>(); c.SetCoords(5); break;
+                        case 56: board[59] = board[56]; board[56] = null; c = board[59].GetComponent<Chess>(); c.SetCoords(59); break;
+                        case 63: board[61] = board[63]; board[63] = null; c = board[61].GetComponent<Chess>(); c.SetCoords(61); break;
+                    } 
+                }
                 MoveGenerator.lastMove = play;
                 MoveGenerator.GenerateMoves(ref ar,bitboardObject);
             } else {

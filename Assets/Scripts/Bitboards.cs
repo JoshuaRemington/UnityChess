@@ -105,7 +105,8 @@ public class Bitboards
         int enemyIndex = 0;
         findIndex[m.targetSquare] = findIndex[m.startSquare];
         findIndex[m.startSquare] = 0;
-        if(arrayIndex < 8)  {friendlyIndex = 0; enemyIndex = 1;}
+        if(this.whiteTurn)  {friendlyIndex = 0; enemyIndex = 1;}
+        this.whiteTurn = !this.whiteTurn;
         clearSquare(ref this.bitboards[arrayIndex], m.startSquare);
         setSquare(ref this.bitboards[arrayIndex], m.targetSquare);
         clearSquare(ref this.bitboards[friendlyIndex], m.startSquare);
@@ -124,9 +125,42 @@ public class Bitboards
         }
         else if(m.flag == Move.CastleFlag)
         {
-            ;
+            switch(m.targetSquare)
+            {
+                case 2: 
+                    findIndex[3] = findIndex[0]; 
+                    findIndex[0] = 0;
+                    clearSquare(ref this.bitboards[5], 0);
+                    setSquare(ref this.bitboards[5], 3);
+                    clearSquare(ref this.bitboards[friendlyIndex], 0);
+                    setSquare(ref this.bitboards[friendlyIndex], 3);
+                    return 0;
+                case 6:
+                    findIndex[5] = findIndex[7]; 
+                    findIndex[7] = 0;
+                    clearSquare(ref this.bitboards[5], 7);
+                    setSquare(ref this.bitboards[5], 5);
+                    clearSquare(ref this.bitboards[friendlyIndex], 7);
+                    setSquare(ref this.bitboards[friendlyIndex], 5);
+                    return 7;
+                case 58:
+                    findIndex[59] = findIndex[56]; 
+                    findIndex[56] = 0;
+                    clearSquare(ref this.bitboards[11], 56);
+                    setSquare(ref this.bitboards[11], 59);
+                    clearSquare(ref this.bitboards[friendlyIndex], 56);
+                    setSquare(ref this.bitboards[friendlyIndex], 59);
+                    return 56;
+                case 62:
+                    findIndex[61] = findIndex[63]; 
+                    findIndex[63] = 0;
+                    clearSquare(ref this.bitboards[11], 63);
+                    setSquare(ref this.bitboards[11], 61);
+                    clearSquare(ref this.bitboards[friendlyIndex], 63);
+                    setSquare(ref this.bitboards[friendlyIndex], 61);
+                    return 63;
+            }
         }
-        this.whiteTurn = !this.whiteTurn;
         return captureIndex;
     }
 
@@ -138,7 +172,7 @@ public class Bitboards
         int enemyIndex = 0;
         findIndex[m.startSquare] = findIndex[m.targetSquare];
         findIndex[m.targetSquare] = captureIndex;
-        if(arrayIndex < 8)  {friendlyIndex = 0; enemyIndex = 1;}
+        if(this.whiteTurn)  {friendlyIndex = 0; enemyIndex = 1;}
         clearSquare(ref this.bitboards[arrayIndex], m.targetSquare);
         setSquare(ref this.bitboards[arrayIndex], m.startSquare);
     

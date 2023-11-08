@@ -30,6 +30,8 @@ public class MoveGenerator
     
     //if generateForWhite, white is next to move
     private static bool generateForWhite = true; 
+    private static bool inDoubleCheck = false;
+    private static bool inCheck = false;
     private static ulong friendlyBitboard, opponentBitboard, occupiedSquaresBitboard, emptySquaresBitboard;
 
     //2-7 = white piece bitboard, 8-13 = black piece bitboards
@@ -55,11 +57,33 @@ public class MoveGenerator
             opponentBitboard = bitboardObject.bitboards[0];
             startPieceIndex = 8;
         }
-        GeneratePawnMoves(ref moveList, bitboardObject);
-        GenerateKnightMoves(ref moveList, bitboardObject);
-        GenerateSlidingMoves(ref moveList, bitboardObject);
+        //DetermineCheckAndPins(bitboardObject);
         GenerateKingMoves(ref moveList, bitboardObject);
+        if(!inDoubleCheck)
+        {
+            GeneratePawnMoves(ref moveList, bitboardObject);
+            GenerateKnightMoves(ref moveList, bitboardObject);
+            GenerateSlidingMoves(ref moveList, bitboardObject);
+        }
         return currIndex;
+    }
+
+    private static void DetermineCheckAndPins(Bitboards bitboardObject)
+    {
+        ulong kingBitboard = bitboardObject.bitboards[bitboardObject.whiteTurn ? 7 : 13];
+        int i = tzcnt(kingBitboard);
+        ulong temp = Magic.GetBishopAttacks(i, occupiedSquaresBitboard) | Magic.GetRookAttacks(i, occupiedSquaresBitboard);
+        temp &= opponentBitboard;
+        if(temp != 0)
+            inCheck = true;
+        else
+            inCheck = false;
+        temp &= temp-1;
+        if(temp != 0)
+            inDoubleCheck = true;
+        else
+            inDoubleCheck = false;
+        return;
     }
 
     private static void GeneratePawnMoves(ref Move[] moveList, Bitboards bitboardObject)
@@ -191,7 +215,7 @@ public class MoveGenerator
     }
     private static void GenerateKingMoves(ref Move[] moveList, Bitboards bitboardObject)
     {
-        ulong kingBoard = bitboardObject.bitboards[startPieceIndex];
+        ulong kingBoard = bitboardObject.bitboards[startPieceIndex+5];
         int i = tzcnt(kingBoard);
         ulong kingMoves = kingBitboards[i];
         kingMoves &= ~friendlyBitboard;
