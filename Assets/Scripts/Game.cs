@@ -48,7 +48,7 @@ public class Game : MonoBehaviour
         s.Create();
         m.StoreMoves();
         DateTime startTime = DateTime.Now;
-        string temp = Perft(4).ToString();
+        string temp = Perft(5).ToString();
         DateTime endTime = DateTime.Now;
         TimeSpan elapsedTime = endTime - startTime;
         double timeTaken = elapsedTime.TotalMilliseconds;
@@ -105,7 +105,8 @@ public class Game : MonoBehaviour
         float newZ = -0.9f;
         for(int i = 0; i < 64; i++) {
             Move test = new Move(pos, i);
-            if(test.Contains(ar, test) != Move.nullMove)
+            test = test.Contains(ar, test);
+            if(!Move.SameMove(test, Move.nullMove))
                 {
                     moveTiles[i] = Instantiate(MoveTile);
                     Vector3 newPosition = moveTiles[i].transform.position;
@@ -163,7 +164,7 @@ public class Game : MonoBehaviour
             int endloc = this.TranslateMouseToPos(mousePosition);
             Move play = new Move(startloc,endloc);
             play = play.Contains(ar, play);
-            if(play == Move.nullMove)
+            if(!Move.SameMove(play, Move.nullMove))
             {
                 //int captureIndex = -1;
                 if(board[endloc]) 
@@ -176,16 +177,22 @@ public class Game : MonoBehaviour
                 board[startloc] = null;
                 c.SetCoords(endloc);
                 whiteToMove = !whiteToMove;
-                int castleSquare = bitboardObject.playMove(play);
-                if(play.flag == 2)
+                int interestSquare = bitboardObject.playMove(play);
+                if(play.flag == Move.CastleFlag)
                 {
-                    switch(castleSquare)
+                    switch(interestSquare)
                     {
                         case 0: board[3] = board[0]; board[0] = null; c = board[3].GetComponent<Chess>(); c.SetCoords(3); break;
                         case 7: board[5] = board[7]; board[7] = null; c = board[5].GetComponent<Chess>(); c.SetCoords(5); break;
                         case 56: board[59] = board[56]; board[56] = null; c = board[59].GetComponent<Chess>(); c.SetCoords(59); break;
                         case 63: board[61] = board[63]; board[63] = null; c = board[61].GetComponent<Chess>(); c.SetCoords(61); break;
                     } 
+                }
+                else if(play.flag == Move.EnPassantCaptureFlag)
+                {
+                    Chess temp = board[play.enPassantSquare].GetComponent<Chess>();
+                    Destroy(board[play.enPassantSquare]);
+                    board[play.enPassantSquare] = null;
                 }
                 MoveGenerator.lastMove = play;
                 MoveGenerator.GenerateMoves(ref ar,bitboardObject);

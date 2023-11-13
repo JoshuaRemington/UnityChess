@@ -36,6 +36,12 @@ public class Move
 		this.moveValue = (ushort)(startSquare | targetSquare << 6 | flag << 12);
 	}
 
+	public Move(int startSquare, int targetSquare, int flag, int enPassantSquare)
+	{
+		this.enPassantSquare = enPassantSquare;
+		this.moveValue = (ushort)(startSquare | targetSquare << 6 | flag << 12);
+	}
+
 	public int startSquare => moveValue & startSquareMask;
 	public int targetSquare => (moveValue & targetSquareMask) >> 6;
 	public bool isPromotion => flag >= PromoteToQueenFlag;

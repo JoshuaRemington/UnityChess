@@ -7,22 +7,6 @@ public class Chess : MonoBehaviour
     public GameObject controller;
     public bool isWhite;
     public int pieceToBitboardValue;
-    /*  0-13 for bitboard index correlation in array: 0 = white, BlackKing = 13
-        White,
-        Black,
-        WhitePawn,
-        WhiteKnight,
-        WhiteBishop,
-        WhiteRook,
-        WhiteQueen,
-        WhiteKing,
-        BlackPawn,
-        BlackKnight,
-        BlackBishop,
-        BlackRook,
-        BlackQueen,
-        BlackKing
-    */
 
     public Sprite black_queen, black_knight, black_bishop, black_king, black_rook, black_pawn;
     public Sprite white_queen, white_knight, white_bishop, white_king, white_rook, white_pawn;

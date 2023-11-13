@@ -6,23 +6,15 @@ using static Unity.Mathematics.math;
 
 public class Bitboards
 {
-    /*  0-13 for bitboard index correlation in array: 0 = white, BlackKing = 13
-        0  White,
-        1  Black,
-        2  WhitePawn,
-        3  WhiteKnight,
-        4  WhiteBishop,
-        5  WhiteRook,
-        6  WhiteQueen,
-        7  WhiteKing,
-        8  BlackPawn,
-        9 BlackKnight,
-        10 BlackBishop,
-        11 BlackRook,
-        12 BlackQueen,
-        13 BlackKing
-    */
-    public ulong[] bitboards = new ulong[14];
+    public ulong[] pawns = new ulong[2];
+    public ulong[] knights = new ulong[2];
+    public ulong[] bishops = new ulong[2];
+    public ulong[] rooks = new ulong[2];
+    public ulong[] queens = new ulong[2];
+    public ulong[] kingBitboards = new ulong[2];
+    public int[] kings = new int[2];
+    public ulong occupiedSquares => pieces[0] | pieces[1];
+    public ulong[] pieces = new ulong[2];
     public int[] findIndex =   {5,3,4,6,7,4,3,5,
                                 2,2,2,2,2,2,2,2,
                                 0,0,0,0,0,0,0,0,
@@ -65,20 +57,22 @@ public class Bitboards
     //square index 0 is least significant bit, square index 63 is most significant bit
     public void initiateBitboardStartPosition()
     {
-        bitboards[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_1111_1111; //white pieces
-        bitboards[1] = 0B1111_1111_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pieces
-        bitboards[2] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_0000_0000; //white pawns
-        bitboards[3] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0100_0010; //white knights
-        bitboards[4] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0010_0100; //white bishops
-        bitboards[5] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0001; //white rooks
-        bitboards[6] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000;  //white queen
-        bitboards[7] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0001_0000;  //white king
-        bitboards[8] = 0B0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pawns
-        bitboards[9] = 0B0100_0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black knights
-        bitboards[10] = 0B0010_0100_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black bishops
-        bitboards[11] = 0B1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black rooks
-        bitboards[12] = 0B0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black queen
-        bitboards[13] = 0B0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black king
+        pieces[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_1111_1111; //white pieces
+        pieces[1] = 0B1111_1111_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pieces
+        pawns[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_0000_0000; //white pawns
+        knights[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0100_0010; //white knights
+        bishops[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0010_0100; //white bishops
+        rooks[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0001; //white rooks
+        queens[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000;  //white queen
+        kings[0] = 4;
+        kingBitboards[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0001_0000; 
+        pawns[1] = 0B0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pawns
+        knights[1] = 0B0100_0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black knights
+        bishops[1] = 0B0010_0100_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black bishops
+        rooks[1] = 0B1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black rooks
+        queens[1] = 0B0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black queen
+        kings[1] = 60;
+        kingBitboards[1] = 0B0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; 
         createCastlingMasks();
     }
 
@@ -89,38 +83,68 @@ public class Bitboards
 
     public static void setSquare(ref ulong givenbitboard, int index)
     {
+        if(index == -1) return;
         givenbitboard |= 1ul << index;
     }
 
     public void clearSquare(ref ulong givenbitboard, int index)
     {
+        if(index == -1) return;
         givenbitboard &= ~(1ul << index);
+    }
+
+    public void makeMove(int index, int startSquare, int endSquare)
+    {
+        switch(index)
+        {
+            case 2: clearSquare(ref pawns[0], startSquare); setSquare(ref pawns[0], endSquare); break;
+            case 3: clearSquare(ref knights[0], startSquare); setSquare(ref knights[0], endSquare); break;
+            case 4: clearSquare(ref bishops[0], startSquare); setSquare(ref bishops[0], endSquare); break;
+            case 5: clearSquare(ref rooks[0], startSquare); setSquare(ref rooks[0], endSquare); break;
+            case 6: clearSquare(ref queens[0], startSquare); setSquare(ref queens[0], endSquare); break;
+            case 7: clearSquare(ref kingBitboards[0] ,startSquare); setSquare(ref kingBitboards[0], endSquare); kings[0]=endSquare; break;
+            case 8: clearSquare(ref pawns[1], startSquare); setSquare(ref pawns[1], endSquare); break;
+            case 9: clearSquare(ref knights[1], startSquare); setSquare(ref knights[1], endSquare); break;
+            case 10: clearSquare(ref bishops[1], startSquare); setSquare(ref bishops[1], endSquare); break;
+            case 11: clearSquare(ref rooks[1], startSquare); setSquare(ref rooks[1], endSquare); break;
+            case 12: clearSquare(ref queens[1], startSquare); setSquare(ref queens[1], endSquare); break;
+            case 13: clearSquare(ref kingBitboards[1] ,startSquare); setSquare(ref kingBitboards[1], endSquare); kings[1]=endSquare; break;
+            default: 
+                return;
+        }
     }
 
     public int playMove(Move m)
     {
         int arrayIndex = findIndex[m.startSquare];  
         int captureIndex = findIndex[m.targetSquare];
-        int friendlyIndex = 1;
-        int enemyIndex = 0;
         findIndex[m.targetSquare] = findIndex[m.startSquare];
         findIndex[m.startSquare] = 0;
-        if(this.whiteTurn)  {friendlyIndex = 0; enemyIndex = 1;}
+        int enemyIndex, friendlyIndex;
+        if(this.whiteTurn)
+        {
+            enemyIndex = 1;
+            friendlyIndex = 0;   
+        }
+        else
+        {
+            enemyIndex = 0;
+            friendlyIndex = 1;
+        }
         this.whiteTurn = !this.whiteTurn;
-        clearSquare(ref this.bitboards[arrayIndex], m.startSquare);
-        setSquare(ref this.bitboards[arrayIndex], m.targetSquare);
-        clearSquare(ref this.bitboards[friendlyIndex], m.startSquare);
-        setSquare(ref this.bitboards[friendlyIndex], m.targetSquare);
+        clearSquare(ref pieces[friendlyIndex], m.startSquare);
+        setSquare(ref pieces[friendlyIndex], m.targetSquare);
+        makeMove(arrayIndex, m.startSquare, m.targetSquare);
         if(captureIndex != 0)
         {
-            clearSquare(ref this.bitboards[enemyIndex], m.targetSquare);
-            clearSquare(ref this.bitboards[captureIndex], m.targetSquare);
+            makeMove(captureIndex, m.targetSquare, -1);
+            clearSquare(ref pieces[enemyIndex], m.targetSquare);
         }
         else if(m.flag == Move.EnPassantCaptureFlag)
         {
             captureIndex = findIndex[m.enPassantSquare];
-            clearSquare(ref this.bitboards[enemyIndex], m.enPassantSquare);
-            clearSquare(ref this.bitboards[captureIndex], m.enPassantSquare);
+            makeMove(captureIndex, m.enPassantSquare, -1);
+            clearSquare(ref pieces[enemyIndex], m.enPassantSquare);
             findIndex[m.enPassantSquare] = 0;
         }
         else if(m.flag == Move.CastleFlag)
@@ -130,34 +154,34 @@ public class Bitboards
                 case 2: 
                     findIndex[3] = findIndex[0]; 
                     findIndex[0] = 0;
-                    clearSquare(ref this.bitboards[5], 0);
-                    setSquare(ref this.bitboards[5], 3);
-                    clearSquare(ref this.bitboards[friendlyIndex], 0);
-                    setSquare(ref this.bitboards[friendlyIndex], 3);
+                    clearSquare(ref rooks[0], 0);
+                    setSquare(ref rooks[0], 3);
+                    clearSquare(ref pieces[0], 0);
+                    setSquare(ref pieces[0], 3);
                     return 0;
                 case 6:
                     findIndex[5] = findIndex[7]; 
                     findIndex[7] = 0;
-                    clearSquare(ref this.bitboards[5], 7);
-                    setSquare(ref this.bitboards[5], 5);
-                    clearSquare(ref this.bitboards[friendlyIndex], 7);
-                    setSquare(ref this.bitboards[friendlyIndex], 5);
+                    clearSquare(ref rooks[0], 7);
+                    setSquare(ref rooks[0], 5);
+                    clearSquare(ref pieces[0], 7);
+                    setSquare(ref pieces[0], 5);
                     return 7;
                 case 58:
                     findIndex[59] = findIndex[56]; 
                     findIndex[56] = 0;
-                    clearSquare(ref this.bitboards[11], 56);
-                    setSquare(ref this.bitboards[11], 59);
-                    clearSquare(ref this.bitboards[friendlyIndex], 56);
-                    setSquare(ref this.bitboards[friendlyIndex], 59);
+                    clearSquare(ref rooks[1], 56);
+                    setSquare(ref rooks[1], 59);
+                    clearSquare(ref pieces[1], 56);
+                    setSquare(ref pieces[1], 59);
                     return 56;
                 case 62:
                     findIndex[61] = findIndex[63]; 
                     findIndex[63] = 0;
-                    clearSquare(ref this.bitboards[11], 63);
-                    setSquare(ref this.bitboards[11], 61);
-                    clearSquare(ref this.bitboards[friendlyIndex], 63);
-                    setSquare(ref this.bitboards[friendlyIndex], 61);
+                    clearSquare(ref rooks[1], 6);
+                    setSquare(ref rooks[1], 61);
+                    clearSquare(ref pieces[1], 63);
+                    setSquare(ref pieces[1], 61);
                     return 63;
             }
         }
@@ -167,27 +191,72 @@ public class Bitboards
     public void undoMove(Move m, int captureIndex)
     {
         this.whiteTurn = !this.whiteTurn;
-        int arrayIndex = findIndex[m.targetSquare];
-        int friendlyIndex = 1;
-        int enemyIndex = 0;
+        int arrayIndex = findIndex[m.targetSquare];  
         findIndex[m.startSquare] = findIndex[m.targetSquare];
         findIndex[m.targetSquare] = captureIndex;
-        if(this.whiteTurn)  {friendlyIndex = 0; enemyIndex = 1;}
-        clearSquare(ref this.bitboards[arrayIndex], m.targetSquare);
-        setSquare(ref this.bitboards[arrayIndex], m.startSquare);
+        int enemyIndex, friendlyIndex;
+        if(this.whiteTurn)
+        {
+            enemyIndex = 1;
+            friendlyIndex = 0;   
+        }
+        else
+        {
+            enemyIndex = 0;
+            friendlyIndex = 1;
+        }
+        makeMove(arrayIndex, m.targetSquare, m.startSquare);
     
-        clearSquare(ref this.bitboards[friendlyIndex], m.targetSquare);
-        setSquare(ref this.bitboards[friendlyIndex], m.startSquare);
+        clearSquare(ref pieces[friendlyIndex], m.targetSquare);
+        setSquare(ref pieces[friendlyIndex], m.startSquare);
         if(m.flag == Move.EnPassantCaptureFlag)
         {
-            setSquare(ref this.bitboards[enemyIndex], m.enPassantSquare);
-            setSquare(ref this.bitboards[captureIndex], m.enPassantSquare);
+            setSquare(ref pieces[enemyIndex], m.enPassantSquare);
+            makeMove(captureIndex, -1, m.enPassantSquare);
             findIndex[m.enPassantSquare] = captureIndex;
         }  
         else if (captureIndex != 0)
         {
-            setSquare(ref this.bitboards[enemyIndex], m.targetSquare);
-            setSquare(ref this.bitboards[captureIndex], m.targetSquare);
+            setSquare(ref pieces[enemyIndex], m.targetSquare);
+            makeMove(captureIndex, -1, m.targetSquare);
+        }
+        else if(m.flag == Move.CastleFlag)
+        {
+            switch(m.targetSquare)
+            {
+                case 2: 
+                    findIndex[0] = findIndex[3]; 
+                    findIndex[3] = 0;
+                    clearSquare(ref rooks[0], 3);
+                    setSquare(ref rooks[0], 0);
+                    clearSquare(ref pieces[0], 3);
+                    setSquare(ref pieces[0], 0);
+                    break;
+                case 6:
+                    findIndex[7] = findIndex[5]; 
+                    findIndex[5] = 0;
+                    clearSquare(ref rooks[0], 5);
+                    setSquare(ref rooks[0], 7);
+                    clearSquare(ref pieces[0], 5);
+                    setSquare(ref pieces[0], 7);
+                    break;
+                case 58:
+                    findIndex[56] = findIndex[59]; 
+                    findIndex[59] = 0;
+                    clearSquare(ref rooks[1], 59);
+                    setSquare(ref rooks[1], 56);
+                    clearSquare(ref pieces[1], 59);
+                    setSquare(ref pieces[1], 56);
+                    break;
+                case 62:
+                    findIndex[63] = findIndex[61]; 
+                    findIndex[61] = 0;
+                    clearSquare(ref rooks[1], 61);
+                    setSquare(ref rooks[1], 63);
+                    clearSquare(ref pieces[1], 61);
+                    setSquare(ref pieces[1], 63);
+                    break;
+            }
         }
     }
 
