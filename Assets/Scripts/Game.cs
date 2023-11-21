@@ -24,31 +24,40 @@ public class Game : MonoBehaviour
     //private bool gameOver = false;
 
     // Start is called before the first frame update
+    private string standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    private string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
     void Start()
     {
-       board = new GameObject[] {
-            Create("white_rook", 0), Create("white_knight", 1), Create("white_bishop", 2),
-            Create("white_queen", 3), Create("white_king", 4), Create("white_bishop", 5),
-            Create("white_knight", 6), Create("white_rook", 7), 
-            Create("white_pawn", 8), Create("white_pawn", 9), Create("white_pawn", 10), 
-            Create("white_pawn", 11), Create("white_pawn", 12), Create("white_pawn", 13), 
-            Create("white_pawn", 14), Create("white_pawn", 15),
-            null, null, null, null, null, null, null, null,
-            null, null, null, null, null, null, null, null,
-            null, null, null, null, null, null, null, null,
-            null, null, null, null, null, null, null, null,
-            Create("black_pawn", 48), Create("black_pawn", 49), Create("black_pawn", 50), 
-            Create("black_pawn", 51), Create("black_pawn", 52), Create("black_pawn", 53), 
-            Create("black_pawn", 54), Create("black_pawn", 55),
-            Create("black_rook", 56), Create("black_knight", 57), Create("black_bishop", 58),
-            Create("black_queen", 59), Create("black_king", 60), Create("black_bishop", 61),
-            Create("black_knight", 62), Create("black_rook", 63)
-        };
-        bitboardObject.initiateBitboardStartPosition();
+        if(fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+        {
+            board = new GameObject[] {
+                    Create("white_rook", 0), Create("white_knight", 1), Create("white_bishop", 2),
+                    Create("white_queen", 3), Create("white_king", 4), Create("white_bishop", 5),
+                    Create("white_knight", 6), Create("white_rook", 7), 
+                    Create("white_pawn", 8), Create("white_pawn", 9), Create("white_pawn", 10), 
+                    Create("white_pawn", 11), Create("white_pawn", 12), Create("white_pawn", 13), 
+                    Create("white_pawn", 14), Create("white_pawn", 15),
+                    null, null, null, null, null, null, null, null,
+                    null, null, null, null, null, null, null, null,
+                    null, null, null, null, null, null, null, null,
+                    null, null, null, null, null, null, null, null,
+                    Create("black_pawn", 48), Create("black_pawn", 49), Create("black_pawn", 50), 
+                    Create("black_pawn", 51), Create("black_pawn", 52), Create("black_pawn", 53), 
+                    Create("black_pawn", 54), Create("black_pawn", 55),
+                    Create("black_rook", 56), Create("black_knight", 57), Create("black_bishop", 58),
+                    Create("black_queen", 59), Create("black_king", 60), Create("black_bishop", 61),
+                    Create("black_knight", 62), Create("black_rook", 63)
+                };
+        }
+        else
+            parseFen(fen, ref board);
+        bitboardObject.initiateBitboardStartPosition(fen);
         s.Create();
         m.StoreMoves();
         DateTime startTime = DateTime.Now;
-        string temp = Perft(5).ToString();
+        bool saveSideToMove = whiteToMove;
+        string temp = Perft(4).ToString();
+        whiteToMove = saveSideToMove;
         DateTime endTime = DateTime.Now;
         TimeSpan elapsedTime = endTime - startTime;
         double timeTaken = elapsedTime.TotalMilliseconds;
@@ -209,11 +218,12 @@ public class Game : MonoBehaviour
         int n_moves, i;
         ulong nodes = 0;
 
-        if(depth == 0)
-            return 1ul;
-
         n_moves = MoveGenerator.GenerateMoves(ref test, bitboardObject);
         whiteToMove = !whiteToMove;
+        if(n_moves == 0) return 0;
+
+        if(depth == 1)
+            return (ulong)n_moves;
         for(i = 0; i < n_moves; i++)
         {
             Move play = test[i];
@@ -221,7 +231,34 @@ public class Game : MonoBehaviour
             nodes += Perft(depth-1);
             bitboardObject.undoMove(play,captureIndex);
         }
-        whiteToMove = !whiteToMove;
         return nodes;
+    }
+
+    private void parseFen(string fen, ref GameObject[] temp)
+    {
+        int i = 0;
+        int j = 0;
+        while(j < fen.Length && i < 64)
+        {
+            switch(fen[j])
+            {
+                case 'p': temp[63-i] = Create("black_pawn", 63-i); break;
+                case 'n': temp[63-i] = Create("black_knight", 63-i); break;
+                case 'b': temp[63-i] = Create("black_bishop", 63-i); break;
+                case 'r': temp[63-i] = Create("black_rook", 63-i); break;
+                case 'q': temp[63-i] = Create("black_queen", 63-i); break;
+                case 'k': temp[63-i] = Create("black_king", 63-i); break;
+                case 'P': temp[63-i] = Create("white_pawn", 63-i); break;
+                case 'N': temp[63-i] = Create("white_knight", 63-i); break;
+                case 'B': temp[63-i] = Create("white_bishop", 63-i); break;
+                case 'R': temp[63-i] = Create("white_rook", 63-i); break;
+                case 'Q': temp[63-i] = Create("white_queen", 63-i); break;
+                case 'K': temp[63-i] = Create("white_king", 63-i); break;
+                case '/': j++; continue;
+                default: double storeValue = Char.GetNumericValue(fen[j]); i+= (int)storeValue; j++; continue;
+            }
+            i++;
+            j++;
+        }
     }
 }

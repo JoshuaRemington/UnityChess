@@ -36,6 +36,8 @@ public class Bitboards
 	public const ulong Rank7 = Rank6 << 8;
 	public const ulong Rank8 = Rank7 << 8;
 
+    public const ulong promotionMask = Rank1 | Rank8;
+
 	public const ulong notAFile = ~FileA;
     public const ulong notBFile = ~(FileA << 1);
     public const ulong notABFiles = notAFile & notBFile;
@@ -55,25 +57,81 @@ public class Bitboards
     //standard chess start position with white on top of screen(at index 0)
     //Here is 64 0's: &B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000
     //square index 0 is least significant bit, square index 63 is most significant bit
-    public void initiateBitboardStartPosition()
+    public void initiateBitboardStartPosition(string fen)
     {
-        pieces[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_1111_1111; //white pieces
-        pieces[1] = 0B1111_1111_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pieces
-        pawns[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_0000_0000; //white pawns
-        knights[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0100_0010; //white knights
-        bishops[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0010_0100; //white bishops
-        rooks[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0001; //white rooks
-        queens[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000;  //white queen
-        kings[0] = 4;
-        kingBitboards[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0001_0000; 
-        pawns[1] = 0B0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pawns
-        knights[1] = 0B0100_0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black knights
-        bishops[1] = 0B0010_0100_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black bishops
-        rooks[1] = 0B1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black rooks
-        queens[1] = 0B0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black queen
-        kings[1] = 60;
-        kingBitboards[1] = 0B0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; 
+        if(fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
+        {
+            pieces[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_1111_1111; //white pieces
+            pieces[1] = 0B1111_1111_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pieces
+            pawns[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_0000_0000; //white pawns
+            knights[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0100_0010; //white knights
+            bishops[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0010_0100; //white bishops
+            rooks[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0001; //white rooks
+            queens[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000;  //white queen
+            kings[0] = 4;
+            kingBitboards[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0001_0000; 
+            pawns[1] = 0B0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pawns
+            knights[1] = 0B0100_0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black knights
+            bishops[1] = 0B0010_0100_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black bishops
+            rooks[1] = 0B1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black rooks
+            queens[1] = 0B0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black queen
+            kings[1] = 60;
+            kingBitboards[1] = 0B0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; 
+        }
+        else 
+            parseFenForBitboard(fen);
         createCastlingMasks();
+    }
+
+    private void parseFenForBitboard(string fen)
+    {
+        bool loopForPieces = true;
+        int i = 0;
+        int j = 0;
+        for(int r = 0; r < 64; r++) findIndex[r] = 0;
+        while(loopForPieces && j < fen.Length && i < 64)
+        {
+            if(fen[j] == ' ') {loopForPieces = false; continue;}
+            switch(fen[j])
+            {
+                case 'p': setSquare(ref pieces[1], 63-i); setSquare(ref pawns[1], 63-i); findIndex[63-i] = 8; break;
+                case 'n': setSquare(ref pieces[1], 63-i); setSquare(ref knights[1], 63-i); findIndex[63-i] = 9; break;
+                case 'b': setSquare(ref pieces[1], 63-i); setSquare(ref bishops[1], 63-i); findIndex[63-i] = 10; break;
+                case 'r': setSquare(ref pieces[1], 63-i); setSquare(ref rooks[1], 63-i); findIndex[63-i] = 11; break;
+                case 'q': setSquare(ref pieces[1], 63-i); setSquare(ref queens[1], 63-i); findIndex[63-i] = 12; break;
+                case 'k': setSquare(ref pieces[1], 63-i); setSquare(ref kingBitboards[1], 63-i); kings[1] = 63-i; findIndex[63-i] = 13; break;
+                case 'P': setSquare(ref pieces[0], 63-i); setSquare(ref pawns[0], 63-i); findIndex[63-i] = 2; break;
+                case 'N': setSquare(ref pieces[0], 63-i); setSquare(ref knights[0], 63-i); findIndex[63-i] = 3; break;
+                case 'B': setSquare(ref pieces[0], 63-i); setSquare(ref bishops[0], 63-i); findIndex[63-i] = 4; break;
+                case 'R': setSquare(ref pieces[0], 63-i); setSquare(ref rooks[0], 63-i); findIndex[63-i] = 5; break;
+                case 'Q': setSquare(ref pieces[0], 63-i); setSquare(ref queens[0], 63-i); findIndex[63-i] = 6; break;
+                case 'K': setSquare(ref pieces[0], 63-i); setSquare(ref kingBitboards[0], 63-i); kings[0] = 63-i; findIndex[63-i] = 7; break;
+                case '/': j++; continue;
+                default: double storeValue = Char.GetNumericValue(fen[j]); i+= (int)storeValue; j++; continue;
+            }
+            i++;
+            j++;
+        }
+        j++;
+        whiteKingCastle = false;
+        whiteQueenCastle = false;
+        blackKingCastle = false;
+        blackQueenCastle = false;
+        if(j >= fen.Length) return;
+        if(fen[j] == 'w') whiteTurn = true; 
+        else whiteTurn = false;
+        j += 2;
+        while(fen[j] != ' ')
+        {
+            switch(fen[j++])
+            {
+                case 'K': whiteKingCastle = true; break;
+                case 'k': blackKingCastle = true; break;
+                case 'Q': whiteQueenCastle = true; break;
+                case 'q': blackQueenCastle = true; break;
+                default: break;
+            }
+        }
     }
 
     public static void printBitBoard(ulong val)
@@ -185,6 +243,31 @@ public class Bitboards
                     return 63;
             }
         }
+
+        if(m.flag == Move.PromoteToQueenFlag) 
+        {
+            findIndex[m.targetSquare] = this.whiteTurn ? 12 : 6;
+            makeMove(arrayIndex, m.startSquare, -1);
+            setSquare(ref queens[this.whiteTurn ? 1 : 0], m.targetSquare);
+        }
+        else if(m.flag == Move.PromoteToRookFlag)
+        {
+            findIndex[m.targetSquare] = this.whiteTurn ? 11 : 5;
+            makeMove(arrayIndex, m.startSquare, -1);
+            setSquare(ref rooks[this.whiteTurn ? 1 : 0], m.targetSquare);
+        }
+        else if(m.flag == Move.PromoteToBishopFlag)
+        {
+            findIndex[m.targetSquare] = this.whiteTurn ? 10 : 4;
+            makeMove(arrayIndex, m.startSquare, -1);
+            setSquare(ref bishops[this.whiteTurn ? 1 : 0], m.targetSquare);
+        }
+        else if(m.flag == Move.PromoteToKnightFlag)
+        {
+            findIndex[m.targetSquare] = this.whiteTurn ? 9 : 3;
+            makeMove(arrayIndex, m.startSquare, -1);
+            setSquare(ref knights[this.whiteTurn ? 1 : 0], m.targetSquare);
+        }
         return captureIndex;
     }
 
@@ -257,6 +340,13 @@ public class Bitboards
                     setSquare(ref pieces[1], 63);
                     break;
             }
+        }
+
+        if(m.flag > 3) 
+        {
+            findIndex[m.startSquare] = this.whiteTurn ? 2 : 8;
+            makeMove(arrayIndex, m.startSquare, -1);
+            setSquare(ref pawns[this.whiteTurn ? 0 : 1], m.startSquare);
         }
     }
 

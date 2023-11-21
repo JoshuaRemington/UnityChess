@@ -15,8 +15,9 @@ public class MoveGenerator
     private static bool generateForWhite = true; 
     private static bool inDoubleCheck = false;
     private static bool inCheck = false;
-    private static ulong emptySquaresBitboard, friendlyBitboard, opponentBitboard, diagonalPinnedPieces, orthogonalPinnedPieces, opponentAttackMap, checkingSquares, pinRays;
+    private static ulong emptySquaresBitboard, friendlyBitboard, opponentBitboard, diagonalPinnedPieces, orthogonalPinnedPieces, opponentAttackMap, checkingSquares, orthogonalPinRays, diagonalPinRays;
     private static ulong enemyOrthogonalSliders, enemyDiagonalSliders;
+    private static ulong whiteKingRookCheck, blackKingRookCheck, whiteQueenRookCheck, blackQueenRookCheck;
     //2-7 = white piece bitboard, 8-13 = black piece bitboards
     public static Move lastMove = new Move(-1,-1);
     public static int friendlyKingSquare;
@@ -26,7 +27,8 @@ public class MoveGenerator
         inDoubleCheck = false;
         moveList = new Move[256];
         currIndex = 0;
-        pinRays = 0UL;
+        diagonalPinRays = 0UL;
+        orthogonalPinRays = 0UL;
         orthogonalPinnedPieces = 0UL;
         diagonalPinnedPieces = 0UL;
         opponentAttackMap = 0UL;
@@ -35,6 +37,7 @@ public class MoveGenerator
         player = generateForWhite ? 0:1;
         enemyPlayer = generateForWhite ? 1:0;
         emptySquaresBitboard = ~bitboardObject.occupiedSquares;
+        if(bitboardObject.kingBitboards[player] == 0) return 0;
         if(generateForWhite)
         {
             friendlyBitboard = bitboardObject.pieces[0];
@@ -58,11 +61,6 @@ public class MoveGenerator
             GenerateKnightMoves(ref moveList, bitboardObject);
             GenerateSlidingMoves(ref moveList, bitboardObject);
         }
-        if(orthogonalPinnedPieces != 0 || diagonalPinnedPieces != 0)
-            {
-                Bitboards.printBitBoard(orthogonalPinnedPieces);
-                Bitboards.printBitBoard(diagonalPinnedPieces);
-            }
         return currIndex;
     }
 
@@ -71,10 +69,11 @@ public class MoveGenerator
         ulong kingRookRay = Magic.GetRookAttacks(bitboardObject.kings[player], bitboardObject.occupiedSquares);
         ulong kingBishopRay = Magic.GetBishopAttacks(bitboardObject.kings[player], bitboardObject.occupiedSquares);
         ulong friendlyNoKing = friendlyBitboard & ~bitboardObject.kingBitboards[player];
-        while(enemyOrthogonalSliders != 0 && !inDoubleCheck)
+        ulong copyOfEnemyOrthogonalSliders = enemyOrthogonalSliders;
+        while(copyOfEnemyOrthogonalSliders != 0 && !inDoubleCheck)
         {
-            int i = tzcnt(enemyOrthogonalSliders);
-            enemyOrthogonalSliders &= enemyOrthogonalSliders-1;
+            int i = tzcnt(copyOfEnemyOrthogonalSliders);
+            copyOfEnemyOrthogonalSliders &= copyOfEnemyOrthogonalSliders-1;
             ulong testing = Magic.GetRookAttacks(i, bitboardObject.occupiedSquares);
             opponentAttackMap |= testing;
             if((testing & friendlyNoKing) != 0)
@@ -89,7 +88,7 @@ public class MoveGenerator
                         Bitboards.setSquare(ref orthogonalPinnedPieces, j);
                     
                     ulong tempWithoutPinned = bitboardObject.occupiedSquares & ~intersection;
-                    pinRays |= Magic.GetRookAttacks(i, tempWithoutPinned) & Magic.GetRookAttacks(bitboardObject.kings[player], tempWithoutPinned);
+                    orthogonalPinRays |= Magic.GetRookAttacks(i, tempWithoutPinned) & Magic.GetRookAttacks(bitboardObject.kings[player], tempWithoutPinned);
                 }
             }
             if((testing & bitboardObject.kingBitboards[player]) != 0)
@@ -97,6 +96,7 @@ public class MoveGenerator
                 inDoubleCheck = inCheck;
                 inCheck = true;
                 checkingSquares |= Magic.GetRookAttacks(i, bitboardObject.occupiedSquares) & Magic.GetRookAttacks(bitboardObject.kings[player], bitboardObject.occupiedSquares);
+                Bitboards.setSquare(ref checkingSquares, i);
             }
         }
 
@@ -118,7 +118,7 @@ public class MoveGenerator
                         Bitboards.setSquare(ref diagonalPinnedPieces, j);
                     
                     ulong tempWithoutPinned = bitboardObject.occupiedSquares & ~intersection;
-                    pinRays |= Magic.GetBishopAttacks(i, tempWithoutPinned) & Magic.GetBishopAttacks(bitboardObject.kings[player], tempWithoutPinned);
+                    diagonalPinRays |= Magic.GetBishopAttacks(i, tempWithoutPinned) & Magic.GetBishopAttacks(bitboardObject.kings[player], tempWithoutPinned);
                 }
             }
             if((testing & bitboardObject.kingBitboards[player]) != 0)
@@ -126,6 +126,7 @@ public class MoveGenerator
                 inDoubleCheck = inCheck;
                 inCheck = true;
                 checkingSquares |= Magic.GetBishopAttacks(i, bitboardObject.occupiedSquares) & Magic.GetBishopAttacks(bitboardObject.kings[player], bitboardObject.occupiedSquares);
+                Bitboards.setSquare(ref checkingSquares, i);
             }
         }
 
@@ -135,8 +136,9 @@ public class MoveGenerator
         {
             int i = tzcnt(opponentPawns);
             opponentPawns &= opponentPawns-1;
-            ulong checkForCheck = pawnAttacks[player,i];
-            if((checkForCheck & bitboardObject.kingBitboards[player]) != 0) Bitboards.setSquare(ref checkingSquares, i);
+            ulong checkForCheck = pawnAttacks[enemyPlayer,i];
+            if((checkForCheck & bitboardObject.kingBitboards[player]) != 0) {Bitboards.setSquare(ref checkingSquares, i); inDoubleCheck = inCheck;
+                inCheck = true;}
             opponentAttackMap |= checkForCheck;
         }
         while(opponentKnights != 0)
@@ -144,7 +146,8 @@ public class MoveGenerator
             int i = tzcnt(opponentKnights);
             opponentKnights &= opponentKnights-1;
             ulong checkForCheck = knightBitboards[i];
-            if((checkForCheck & bitboardObject.kingBitboards[player]) != 0) Bitboards.setSquare(ref checkingSquares, i);
+            if((checkForCheck & bitboardObject.kingBitboards[player]) != 0) {Bitboards.setSquare(ref checkingSquares, i); inDoubleCheck = inCheck;
+                inCheck = true;}
             opponentAttackMap |= checkForCheck;
         }
         opponentAttackMap |= kingBitboards[bitboardObject.kings[enemyPlayer]];
@@ -155,7 +158,12 @@ public class MoveGenerator
         ulong pawnBoard = bitboardObject.pawns[player];
         ulong push = new ulong();
         ulong doublePush = new ulong();
+        ulong promotions = new ulong();
         int pushDirection;
+        ulong orthgonalPinnedPawns = pawnBoard & orthogonalPinnedPieces;
+        ulong diagonalPinnedPawns = pawnBoard & diagonalPinnedPieces;
+
+        pawnBoard &= ~(orthogonalPinnedPieces | diagonalPinnedPieces);
 
         if(generateForWhite)
         {
@@ -165,6 +173,8 @@ public class MoveGenerator
             doublePush = push & Bitboards.Rank3;
             doublePush = doublePush << 8;
             doublePush &= emptySquaresBitboard;
+            push |= (orthgonalPinnedPawns << 8) & orthogonalPinRays;
+            push |= ((orthgonalPinnedPawns & Bitboards.Rank3) << 16) & orthogonalPinRays;
         }
         else
         {
@@ -174,12 +184,17 @@ public class MoveGenerator
             doublePush = push & Bitboards.Rank6;
             doublePush = doublePush >> 8;
             doublePush &= emptySquaresBitboard;
+            push |= (orthgonalPinnedPawns >> 8) & orthogonalPinRays;
+            push |= ((orthgonalPinnedPawns & Bitboards.Rank3) >> 16) & orthogonalPinRays;
         }
         if(inCheck)
         {
             push &= checkingSquares;
             doublePush &= checkingSquares;
         }
+
+        promotions = push & Bitboards.promotionMask;
+        push &= ~Bitboards.promotionMask;
 
         while(push != 0)
         {
@@ -195,7 +210,6 @@ public class MoveGenerator
                 Move m = new Move(j-(pushDirection * 2), j, Move.PawnTwoUpFlag);
                 moveList[currIndex++] = m;
         }
-        pawnBoard &= ~(orthogonalPinnedPieces);
         if(lastMove.flag == Move.PawnTwoUpFlag)
         {
             ulong enPassantSquares = 1ul << lastMove.targetSquare+1;
@@ -207,9 +221,26 @@ public class MoveGenerator
                 int i = tzcnt(enPassantSquares);
                 enPassantSquares &= enPassantSquares-1;
                 int landingSquare = lastMove.targetSquare + pushDirection;
-                Move m = new Move(i, landingSquare, Move.EnPassantCaptureFlag, lastMove.targetSquare);
-                moveList[currIndex++] = m;
+                if(!InCheckAfterEnPassant(i, landingSquare, lastMove.targetSquare, bitboardObject))
+                {
+                    Move m = new Move(i, landingSquare, Move.EnPassantCaptureFlag, lastMove.targetSquare);
+                    moveList[currIndex++] = m;
+                }
             }
+        }
+
+        while(promotions != 0)
+        {
+            int j = tzcnt(promotions);
+            promotions &= promotions - 1;
+            Move m = new Move(j-(pushDirection), j, Move.PromoteToQueenFlag);
+            moveList[currIndex++] = m;
+            m = new Move(j-(pushDirection), j, Move.PromoteToRookFlag);
+            moveList[currIndex++] = m;
+            m = new Move(j-(pushDirection), j, Move.PromoteToKnightFlag);
+            moveList[currIndex++] = m;
+            m = new Move(j-(pushDirection), j, Move.PromoteToBishopFlag);
+            moveList[currIndex++] = m;
         }
         
         while(pawnBoard != 0)
@@ -220,11 +251,26 @@ public class MoveGenerator
             attacks = pawnAttacks[player, i];
             attacks &= opponentBitboard;
             if(inCheck) attacks &= checkingSquares;
+            promotions = attacks & Bitboards.promotionMask;
+            attacks &= ~Bitboards.promotionMask;
             while(attacks != 0)
             {
                 int j = tzcnt(attacks);
                 attacks &= attacks - 1;
                 Move m = new Move(i, j);
+                moveList[currIndex++] = m;
+            }
+            while(promotions != 0)
+            {
+                int j = tzcnt(promotions);
+                promotions &= promotions - 1;
+                Move m = new Move(i, j, Move.PromoteToQueenFlag);
+                moveList[currIndex++] = m;
+                m = new Move(i, j, Move.PromoteToRookFlag);
+                moveList[currIndex++] = m;
+                m = new Move(i, j, Move.PromoteToKnightFlag);
+                moveList[currIndex++] = m;
+                m = new Move(i, j, Move.PromoteToBishopFlag);
                 moveList[currIndex++] = m;
             }
         }
@@ -254,6 +300,9 @@ public class MoveGenerator
     private static void GenerateSlidingMoves(ref Move[] moveList, Bitboards bitboardObject) {
         ulong diagonalBoard = bitboardObject.bishops[player] | bitboardObject.queens[player];
         ulong straightBoard = bitboardObject.rooks[player] | bitboardObject.queens[player];
+
+        diagonalBoard &= ~orthogonalPinnedPieces;
+        straightBoard &= ~diagonalPinnedPieces;
 
         while(diagonalBoard != 0) {
             ulong diagonalMove = new ulong();
@@ -302,12 +351,12 @@ public class MoveGenerator
         {
             ulong test1 = bitboardObject.occupiedSquares & bitboardObject.whiteKingCastleMask;
             ulong test2 = bitboardObject.occupiedSquares & bitboardObject.whiteQueenCastleMask;
-            if(bitboardObject.whiteKingCastle && test1 == 0)
+            if(bitboardObject.whiteKingCastle && test1 == 0 && (bitboardObject.rooks[0] & whiteKingRookCheck) != 0)
             {
                 Move m = new Move(4, 6, Move.CastleFlag);
                 moveList[currIndex++] = m;
             }
-            if(bitboardObject.whiteQueenCastle && test2 == 0)
+            if(bitboardObject.whiteQueenCastle && test2 == 0 && (bitboardObject.rooks[0] & whiteQueenRookCheck) != 0)
             {
                 Move m = new Move(4, 2, Move.CastleFlag);
                 moveList[currIndex++] = m;
@@ -317,12 +366,12 @@ public class MoveGenerator
         {
             ulong test1 = bitboardObject.occupiedSquares & bitboardObject.blackKingCastleMask;
             ulong test2 = bitboardObject.occupiedSquares & bitboardObject.blackQueenCastleMask;
-            if(bitboardObject.blackKingCastle && test1 == 0)
+            if(bitboardObject.blackKingCastle && test1 == 0 && (bitboardObject.rooks[1] & blackKingRookCheck) != 0)
             {
                 Move m = new Move(60, 62, Move.CastleFlag);
                 moveList[currIndex++] = m;
             }
-            if(bitboardObject.blackQueenCastle && test2 == 0)
+            if(bitboardObject.blackQueenCastle && test2 == 0 && (bitboardObject.rooks[0] & blackQueenRookCheck) != 0)
             {
                 Move m = new Move(60, 58, Move.CastleFlag);
                 moveList[currIndex++] = m;
@@ -332,6 +381,10 @@ public class MoveGenerator
 
     public void StoreMoves()
     {
+        Bitboards.setSquare(ref whiteQueenRookCheck, 0);
+        Bitboards.setSquare(ref whiteKingRookCheck, 7);
+        Bitboards.setSquare(ref blackKingRookCheck, 63);
+        Bitboards.setSquare(ref blackQueenRookCheck, 56);
         for(int i = 0; i < 64; i++)
         {
             ulong tempBitboard = 1ul << i;
@@ -368,5 +421,18 @@ public class MoveGenerator
             blackPawnAttackMoves |= tempBitboard >> 9 & Bitboards.notHFile;
             pawnAttacks[1,i] = blackPawnAttackMoves;
         }
+    }
+
+    private static bool InCheckAfterEnPassant(int pawnStartSquare, int pawnEndSquare, int pawnCaptureSquare, Bitboards bitboardObject)
+    {
+        ulong enemyOrthogonal = enemyOrthogonalSliders;
+        if(enemyOrthogonal != 0)
+        {
+            ulong maskedBlockers = ((bitboardObject.pieces[0] | bitboardObject.pieces[1]) ^ (1ul << pawnCaptureSquare | 1ul << pawnStartSquare | 1ul << pawnEndSquare));
+            ulong rookAttacks = Magic.GetRookAttacks(friendlyKingSquare, maskedBlockers);
+            return (rookAttacks & enemyOrthogonal) != 0;
+        }
+
+        return false;
     }
 }
