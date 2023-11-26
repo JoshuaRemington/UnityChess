@@ -209,37 +209,37 @@ public class Bitboards
         {
             switch(m.targetSquare)
             {
-                case 2: 
-                    findIndex[3] = findIndex[0]; 
+                case 1: 
+                    findIndex[2] = findIndex[0]; 
                     findIndex[0] = 0;
                     clearSquare(ref rooks[0], 0);
-                    setSquare(ref rooks[0], 3);
+                    setSquare(ref rooks[0], 2);
                     clearSquare(ref pieces[0], 0);
-                    setSquare(ref pieces[0], 3);
+                    setSquare(ref pieces[0], 2);
                     return 0;
-                case 6:
-                    findIndex[5] = findIndex[7]; 
+                case 5:
+                    findIndex[4] = findIndex[7]; 
                     findIndex[7] = 0;
                     clearSquare(ref rooks[0], 7);
-                    setSquare(ref rooks[0], 5);
+                    setSquare(ref rooks[0], 4);
                     clearSquare(ref pieces[0], 7);
-                    setSquare(ref pieces[0], 5);
+                    setSquare(ref pieces[0], 4);
                     return 7;
-                case 58:
-                    findIndex[59] = findIndex[56]; 
+                case 57:
+                    findIndex[58] = findIndex[56]; 
                     findIndex[56] = 0;
                     clearSquare(ref rooks[1], 56);
-                    setSquare(ref rooks[1], 59);
+                    setSquare(ref rooks[1], 58);
                     clearSquare(ref pieces[1], 56);
-                    setSquare(ref pieces[1], 59);
+                    setSquare(ref pieces[1], 58);
                     return 56;
-                case 62:
-                    findIndex[61] = findIndex[63]; 
+                case 61:
+                    findIndex[60] = findIndex[63]; 
                     findIndex[63] = 0;
-                    clearSquare(ref rooks[1], 6);
-                    setSquare(ref rooks[1], 61);
+                    clearSquare(ref rooks[1], 63);
+                    setSquare(ref rooks[1], 60);
                     clearSquare(ref pieces[1], 63);
-                    setSquare(ref pieces[1], 61);
+                    setSquare(ref pieces[1], 60);
                     return 63;
             }
         }
@@ -307,36 +307,36 @@ public class Bitboards
         {
             switch(m.targetSquare)
             {
-                case 2: 
-                    findIndex[0] = findIndex[3]; 
-                    findIndex[3] = 0;
-                    clearSquare(ref rooks[0], 3);
+                case 1: 
+                    findIndex[0] = findIndex[2]; 
+                    findIndex[2] = 0;
+                    clearSquare(ref rooks[0], 2);
                     setSquare(ref rooks[0], 0);
-                    clearSquare(ref pieces[0], 3);
+                    clearSquare(ref pieces[0], 2);
                     setSquare(ref pieces[0], 0);
                     break;
-                case 6:
-                    findIndex[7] = findIndex[5]; 
-                    findIndex[5] = 0;
-                    clearSquare(ref rooks[0], 5);
+                case 5:
+                    findIndex[7] = findIndex[4]; 
+                    findIndex[4] = 0;
+                    clearSquare(ref rooks[0], 4);
                     setSquare(ref rooks[0], 7);
-                    clearSquare(ref pieces[0], 5);
+                    clearSquare(ref pieces[0], 4);
                     setSquare(ref pieces[0], 7);
                     break;
-                case 58:
-                    findIndex[56] = findIndex[59]; 
-                    findIndex[59] = 0;
-                    clearSquare(ref rooks[1], 59);
+                case 57:
+                    findIndex[56] = findIndex[58]; 
+                    findIndex[58] = 0;
+                    clearSquare(ref rooks[1], 58);
                     setSquare(ref rooks[1], 56);
-                    clearSquare(ref pieces[1], 59);
+                    clearSquare(ref pieces[1], 58);
                     setSquare(ref pieces[1], 56);
                     break;
-                case 62:
-                    findIndex[63] = findIndex[61]; 
-                    findIndex[61] = 0;
-                    clearSquare(ref rooks[1], 61);
+                case 61:
+                    findIndex[63] = findIndex[60]; 
+                    findIndex[60] = 0;
+                    clearSquare(ref rooks[1], 60);
                     setSquare(ref rooks[1], 63);
-                    clearSquare(ref pieces[1], 61);
+                    clearSquare(ref pieces[1], 60);
                     setSquare(ref pieces[1], 63);
                     break;
             }
@@ -352,19 +352,19 @@ public class Bitboards
 
     public void createCastlingMasks()
     {
-        whiteKingCastleMask = 1UL << 5;
-        whiteKingCastleMask |= 1UL << 6;
+        whiteKingCastleMask = 1UL << 1;
+        whiteKingCastleMask |= 1UL << 2;
         
-        whiteQueenCastleMask = 1UL << 1;
-        whiteQueenCastleMask |= 1UL << 2;
-        whiteQueenCastleMask |= 1UL << 3;
+        whiteQueenCastleMask = 1UL << 4;
+        whiteQueenCastleMask |= 1UL << 5;
+        whiteQueenCastleMask |= 1UL << 6;
 
-        blackKingCastleMask = 1UL << 61;
-        blackKingCastleMask |= 1UL << 62;
+        blackKingCastleMask = 1UL << 57;
+        blackKingCastleMask |= 1UL << 58;
         
-        blackQueenCastleMask = 1UL << 57;
-        blackQueenCastleMask |= 1UL << 58;
-        blackQueenCastleMask |= 1UL << 59;
+        blackQueenCastleMask = 1UL << 60;
+        blackQueenCastleMask |= 1UL << 61;
+        blackQueenCastleMask |= 1UL << 62;
     }
 }
 

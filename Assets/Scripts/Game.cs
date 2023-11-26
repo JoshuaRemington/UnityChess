@@ -24,39 +24,17 @@ public class Game : MonoBehaviour
     //private bool gameOver = false;
 
     // Start is called before the first frame update
-    private string standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
-    private string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+    private string standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    private string fen = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
     void Start()
     {
-        if(fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
-        {
-            board = new GameObject[] {
-                    Create("white_rook", 0), Create("white_knight", 1), Create("white_bishop", 2),
-                    Create("white_queen", 3), Create("white_king", 4), Create("white_bishop", 5),
-                    Create("white_knight", 6), Create("white_rook", 7), 
-                    Create("white_pawn", 8), Create("white_pawn", 9), Create("white_pawn", 10), 
-                    Create("white_pawn", 11), Create("white_pawn", 12), Create("white_pawn", 13), 
-                    Create("white_pawn", 14), Create("white_pawn", 15),
-                    null, null, null, null, null, null, null, null,
-                    null, null, null, null, null, null, null, null,
-                    null, null, null, null, null, null, null, null,
-                    null, null, null, null, null, null, null, null,
-                    Create("black_pawn", 48), Create("black_pawn", 49), Create("black_pawn", 50), 
-                    Create("black_pawn", 51), Create("black_pawn", 52), Create("black_pawn", 53), 
-                    Create("black_pawn", 54), Create("black_pawn", 55),
-                    Create("black_rook", 56), Create("black_knight", 57), Create("black_bishop", 58),
-                    Create("black_queen", 59), Create("black_king", 60), Create("black_bishop", 61),
-                    Create("black_knight", 62), Create("black_rook", 63)
-                };
-        }
-        else
-            parseFen(fen, ref board);
+        parseFen(fen, ref board);
         bitboardObject.initiateBitboardStartPosition(fen);
         s.Create();
         m.StoreMoves();
         DateTime startTime = DateTime.Now;
         bool saveSideToMove = whiteToMove;
-        string temp = Perft(4).ToString();
+        string temp = Perft(3).ToString();
         whiteToMove = saveSideToMove;
         DateTime endTime = DateTime.Now;
         TimeSpan elapsedTime = endTime - startTime;
@@ -142,8 +120,9 @@ public class Game : MonoBehaviour
     int startloc;
     Chess c;
     Move[] ar = new Move[256];
-    void Update()
+    async void Update()
     {
+        if(whiteToMove) playAIMove();
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         if (Input.GetMouseButtonDown(0))
         {
@@ -191,10 +170,10 @@ public class Game : MonoBehaviour
                 {
                     switch(interestSquare)
                     {
-                        case 0: board[3] = board[0]; board[0] = null; c = board[3].GetComponent<Chess>(); c.SetCoords(3); break;
-                        case 7: board[5] = board[7]; board[7] = null; c = board[5].GetComponent<Chess>(); c.SetCoords(5); break;
-                        case 56: board[59] = board[56]; board[56] = null; c = board[59].GetComponent<Chess>(); c.SetCoords(59); break;
-                        case 63: board[61] = board[63]; board[63] = null; c = board[61].GetComponent<Chess>(); c.SetCoords(61); break;
+                        case 0: board[2] = board[0]; board[0] = null; c = board[2].GetComponent<Chess>(); c.SetCoords(2); break;
+                        case 7: board[4] = board[7]; board[7] = null; c = board[4].GetComponent<Chess>(); c.SetCoords(4); break;
+                        case 56: board[58] = board[56]; board[56] = null; c = board[58].GetComponent<Chess>(); c.SetCoords(58); break;
+                        case 63: board[60] = board[63]; board[63] = null; c = board[60].GetComponent<Chess>(); c.SetCoords(60); break;
                     } 
                 }
                 else if(play.flag == Move.EnPassantCaptureFlag)
@@ -203,13 +182,25 @@ public class Game : MonoBehaviour
                     Destroy(board[play.enPassantSquare]);
                     board[play.enPassantSquare] = null;
                 }
+                else if(play.flag == Move.PromoteToQueenFlag)
+                {
+                    if(!whiteToMove)
+                        board[play.targetSquare].GetComponent<SpriteRenderer>().sprite = c.white_queen;
+                    else
+                        board[play.targetSquare].GetComponent<SpriteRenderer>().sprite = c.black_queen;
+                }
                 MoveGenerator.lastMove = play;
-                MoveGenerator.GenerateMoves(ref ar,bitboardObject);
+                MoveGenerator.GenerateMoves(ref ar, bitboardObject);
             } else {
                 c.SetCoords(startloc);
             }
             selectedObject = null;
         }
+    }
+
+    public void playAIMove()
+    {
+        Move play = AI.rootNegaMax(1, ref bitboardObject);
     }
 
     public ulong Perft(int depth)
@@ -228,7 +219,14 @@ public class Game : MonoBehaviour
         {
             Move play = test[i];
             int captureIndex = bitboardObject.playMove(play);
-            nodes += Perft(depth-1);
+            ulong thisNodes = 0;
+            thisNodes = Perft(depth-1);
+            if(depth == 3)
+            {
+                //Debug.Log(play.startSquare + " || " + play.targetSquare + " # " + thisNodes);
+                ;
+            }
+            nodes += thisNodes;
             bitboardObject.undoMove(play,captureIndex);
         }
         return nodes;
