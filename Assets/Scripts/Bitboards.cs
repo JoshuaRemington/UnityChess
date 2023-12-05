@@ -45,41 +45,23 @@ public class Bitboards
     public const ulong notGFile = ~(FileA << 6);
     public const ulong notGHFiles = notGFile & notHFile;
 
-    public bool whiteQueenCastle = true;
+    //public bool whiteQueenCastle = true;
     public ulong whiteQueenCastleMask;
-    public bool whiteKingCastle = true;
+    //public bool whiteKingCastle = true;
     public ulong whiteKingCastleMask;
-    public bool blackQueenCastle = true;
+    //public bool blackQueenCastle = true;
     public ulong blackQueenCastleMask;
-    public bool blackKingCastle = true;
+    //public bool blackKingCastle = true;
     public ulong blackKingCastleMask;
+    public Stack<GameState> stackForGameStates = new Stack<GameState>();
+    public GameState currentGameState;
     
     //standard chess start position with white on top of screen(at index 0)
     //Here is 64 0's: &B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000
     //square index 0 is least significant bit, square index 63 is most significant bit
     public void initiateBitboardStartPosition(string fen)
     {
-        if(fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
-        {
-            pieces[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_1111_1111; //white pieces
-            pieces[1] = 0B1111_1111_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pieces
-            pawns[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_0000_0000; //white pawns
-            knights[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0100_0010; //white knights
-            bishops[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0010_0100; //white bishops
-            rooks[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0001; //white rooks
-            queens[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000;  //white queen
-            kings[0] = 4;
-            kingBitboards[0] = 0B0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0001_0000; 
-            pawns[1] = 0B0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black pawns
-            knights[1] = 0B0100_0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black knights
-            bishops[1] = 0B0010_0100_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black bishops
-            rooks[1] = 0B1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; //black rooks
-            queens[1] = 0B0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;  //black queen
-            kings[1] = 60;
-            kingBitboards[1] = 0B0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; 
-        }
-        else 
-            parseFenForBitboard(fen);
+        parseFenForBitboard(fen);
         createCastlingMasks();
     }
 
@@ -113,10 +95,10 @@ public class Bitboards
             j++;
         }
         j++;
-        whiteKingCastle = false;
-        whiteQueenCastle = false;
-        blackKingCastle = false;
-        blackQueenCastle = false;
+        bool whiteKingCastle = false;
+        bool whiteQueenCastle = false;
+        bool blackKingCastle = false;
+        bool blackQueenCastle = false;
         if(j >= fen.Length) return;
         if(fen[j] == 'w') whiteTurn = true; 
         else whiteTurn = false;
@@ -132,6 +114,7 @@ public class Bitboards
                 default: break;
             }
         }
+        currentGameState = new GameState(whiteKingCastle, blackKingCastle, whiteQueenCastle, blackQueenCastle);
     }
 
     public static void printBitBoard(ulong val)
@@ -174,6 +157,7 @@ public class Bitboards
 
     public int playMove(Move m)
     {
+        stackForGameStates.Push(currentGameState);
         int arrayIndex = findIndex[m.startSquare];  
         int captureIndex = findIndex[m.targetSquare];
         findIndex[m.targetSquare] = findIndex[m.startSquare];
@@ -188,6 +172,24 @@ public class Bitboards
         {
             enemyIndex = 0;
             friendlyIndex = 1;
+        }
+        if(currentGameState.whiteKingCastle && arrayIndex == 5 && m.startSquare == 0)
+            currentGameState.whiteKingCastle = false;
+        else if(currentGameState.whiteQueenCastle && arrayIndex == 5 && m.startSquare == 7)
+            currentGameState.whiteQueenCastle = false;
+        else if(currentGameState.blackKingCastle && arrayIndex == 11 && m.startSquare == 56)
+            currentGameState.blackKingCastle = false;
+        else if(currentGameState.blackQueenCastle && arrayIndex == 11 && m.startSquare == 63)
+            currentGameState.blackQueenCastle = false;    
+        else if((currentGameState.whiteKingCastle || currentGameState.whiteQueenCastle) && arrayIndex == 7)
+        {
+            currentGameState.whiteKingCastle = false;
+            currentGameState.whiteQueenCastle = false;
+        }
+        else if((currentGameState.blackKingCastle || currentGameState.blackQueenCastle) && arrayIndex == 13)
+        {
+            currentGameState.blackKingCastle = false;
+            currentGameState.blackQueenCastle = false;
         }
         this.whiteTurn = !this.whiteTurn;
         clearSquare(ref pieces[friendlyIndex], m.startSquare);
@@ -273,6 +275,7 @@ public class Bitboards
 
     public void undoMove(Move m, int captureIndex)
     {
+        currentGameState = stackForGameStates.Pop();
         this.whiteTurn = !this.whiteTurn;
         int arrayIndex = findIndex[m.targetSquare];  
         findIndex[m.startSquare] = findIndex[m.targetSquare];

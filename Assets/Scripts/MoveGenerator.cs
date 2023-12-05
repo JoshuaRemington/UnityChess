@@ -19,8 +19,8 @@ public class MoveGenerator
     private static ulong enemyOrthogonalSliders, enemyDiagonalSliders;
     private static ulong whiteKingRookCheck, blackKingRookCheck, whiteQueenRookCheck, blackQueenRookCheck;
     //2-7 = white piece bitboard, 8-13 = black piece bitboards
-    public static Move lastMove = new Move(-1,-1);
     public static int friendlyKingSquare;
+    public static Move lastMove = new Move(-1,-1);
     public static int GenerateMoves(ref Move[] moveList, Bitboards bitboardObject)
     {
         inCheck = false;
@@ -198,8 +198,8 @@ public class MoveGenerator
             doublePush = push & Bitboards.Rank3;
             doublePush = doublePush << 8;
             doublePush &= emptySquaresBitboard;
-            push |= (orthgonalPinnedPawns << 8) & orthogonalPinRays;
-            push |= ((orthgonalPinnedPawns & Bitboards.Rank3) << 16) & orthogonalPinRays;
+            push |= (orthgonalPinnedPawns << 8) & emptySquaresBitboard & orthogonalPinRays;
+            push |= ((((orthgonalPinnedPawns & Bitboards.Rank2) << 8) & emptySquaresBitboard) << 8) & emptySquaresBitboard & orthogonalPinRays;
         }
         else
         {
@@ -209,8 +209,8 @@ public class MoveGenerator
             doublePush = push & Bitboards.Rank6;
             doublePush = doublePush >> 8;
             doublePush &= emptySquaresBitboard;
-            push |= (orthgonalPinnedPawns >> 8) & orthogonalPinRays;
-            push |= ((orthgonalPinnedPawns & Bitboards.Rank3) >> 16) & orthogonalPinRays;
+            push |= (orthgonalPinnedPawns >> 8) & emptySquaresBitboard & orthogonalPinRays;
+            push |= ((((orthgonalPinnedPawns & Bitboards.Rank7) >> 8) & emptySquaresBitboard) >> 8) & emptySquaresBitboard & orthogonalPinRays;
         }
         if(inCheck)
         {
@@ -237,8 +237,8 @@ public class MoveGenerator
         }
         if(lastMove.flag == Move.PawnTwoUpFlag)
         {
-            ulong enPassantSquares = 1ul << lastMove.targetSquare+1;
-            enPassantSquares |= 1ul << lastMove.targetSquare-1;
+            ulong enPassantSquares = (1ul << lastMove.targetSquare+1) & Bitboards.notAFile;
+            enPassantSquares |= (1ul << lastMove.targetSquare-1) & Bitboards.notHFile;
             enPassantSquares &= pawnBoard;
             ulong testForCaptureOnCheck = 1ul << lastMove.targetSquare;
             if(inCheck && (testForCaptureOnCheck & checkingSquares) == 0) enPassantSquares = 0;
@@ -388,12 +388,12 @@ public class MoveGenerator
         {
             ulong test1 = bitboardObject.occupiedSquares & bitboardObject.whiteKingCastleMask;
             ulong test2 = bitboardObject.occupiedSquares & bitboardObject.whiteQueenCastleMask;
-            if(bitboardObject.whiteKingCastle && test1 == 0 && (bitboardObject.rooks[0] & whiteKingRookCheck) != 0)
+            if(bitboardObject.currentGameState.whiteKingCastle && test1 == 0 && (bitboardObject.rooks[0] & whiteKingRookCheck) != 0)
             {
                 Move m = new Move(3, 1, Move.CastleFlag);
                 moveList[currIndex++] = m;
             }
-            if(bitboardObject.whiteQueenCastle && test2 == 0 && (bitboardObject.rooks[0] & whiteQueenRookCheck) != 0)
+            if(bitboardObject.currentGameState.whiteQueenCastle && test2 == 0 && (bitboardObject.rooks[0] & whiteQueenRookCheck) != 0)
             {
                 Move m = new Move(3, 5, Move.CastleFlag);
                 moveList[currIndex++] = m;
@@ -403,12 +403,12 @@ public class MoveGenerator
         {
             ulong test1 = bitboardObject.occupiedSquares & bitboardObject.blackKingCastleMask;
             ulong test2 = bitboardObject.occupiedSquares & bitboardObject.blackQueenCastleMask;
-            if(bitboardObject.blackKingCastle && test1 == 0 && (bitboardObject.rooks[1] & blackKingRookCheck) != 0)
+            if(bitboardObject.currentGameState.blackKingCastle && test1 == 0 && (bitboardObject.rooks[1] & blackKingRookCheck) != 0)
             {
                 Move m = new Move(59, 57, Move.CastleFlag);
                 moveList[currIndex++] = m;
             }
-            if(bitboardObject.blackQueenCastle && test2 == 0 && (bitboardObject.rooks[1] & blackQueenRookCheck) != 0)
+            if(bitboardObject.currentGameState.blackQueenCastle && test2 == 0 && (bitboardObject.rooks[1] & blackQueenRookCheck) != 0)
             {
                 Move m = new Move(59, 61, Move.CastleFlag);
                 moveList[currIndex++] = m;

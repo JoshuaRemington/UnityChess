@@ -9,9 +9,7 @@ public class Game : MonoBehaviour
 {
     public GameObject chesspiece;
     public GameObject MoveTile;
-
     public Text text;
-
     private GameObject[] board = new GameObject[64]; 
 
     private GameObject[] moveTiles = new GameObject[64];
@@ -25,7 +23,8 @@ public class Game : MonoBehaviour
 
     // Start is called before the first frame update
     private string standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    private string fen = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ";
+    private string fen = "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 1";
+    private int perftDepth = 4;
     void Start()
     {
         parseFen(fen, ref board);
@@ -33,8 +32,9 @@ public class Game : MonoBehaviour
         s.Create();
         m.StoreMoves();
         DateTime startTime = DateTime.Now;
+        Move lastMove = MoveGenerator.lastMove;
         bool saveSideToMove = whiteToMove;
-        string temp = Perft(3).ToString();
+        string temp = Perft(perftDepth, lastMove).ToString();
         whiteToMove = saveSideToMove;
         DateTime endTime = DateTime.Now;
         TimeSpan elapsedTime = endTime - startTime;
@@ -42,6 +42,7 @@ public class Game : MonoBehaviour
         
         string temp2 = "\nExecution Time: \n" + timeTaken.ToString();
         text.text = temp + temp2;
+        MoveGenerator.lastMove = lastMove;
         MoveGenerator.GenerateMoves(ref ar, bitboardObject);
     }
 
@@ -117,12 +118,16 @@ public class Game : MonoBehaviour
 
     public GameObject selectedObject;
     Vector3 offset;
-    int startloc;
+    int startloc, endloc;
     Chess c;
     Move[] ar = new Move[256];
     async void Update()
     {
-        if(whiteToMove) playAIMove();
+        /*if(whiteToMove) 
+        {
+            playAIMove();
+            MoveGenerator.GenerateMoves(ref ar, bitboardObject);
+        }*/
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         if (Input.GetMouseButtonDown(0))
         {
@@ -149,47 +154,12 @@ public class Game : MonoBehaviour
         if (Input.GetMouseButtonUp(0) && selectedObject)
         {
             deleteMoveTiles();
-            int endloc = this.TranslateMouseToPos(mousePosition);
+            endloc = this.TranslateMouseToPos(mousePosition);
             Move play = new Move(startloc,endloc);
             play = play.Contains(ar, play);
             if(!Move.SameMove(play, Move.nullMove))
             {
-                //int captureIndex = -1;
-                if(board[endloc]) 
-                {
-                    Chess temp = board[endloc].GetComponent<Chess>();
-                    //captureIndex = temp.pieceToBitboardValue;
-                    Destroy(board[endloc]);
-                }
-                board[endloc] = board[startloc];
-                board[startloc] = null;
-                c.SetCoords(endloc);
-                whiteToMove = !whiteToMove;
-                int interestSquare = bitboardObject.playMove(play);
-                if(play.flag == Move.CastleFlag)
-                {
-                    switch(interestSquare)
-                    {
-                        case 0: board[2] = board[0]; board[0] = null; c = board[2].GetComponent<Chess>(); c.SetCoords(2); break;
-                        case 7: board[4] = board[7]; board[7] = null; c = board[4].GetComponent<Chess>(); c.SetCoords(4); break;
-                        case 56: board[58] = board[56]; board[56] = null; c = board[58].GetComponent<Chess>(); c.SetCoords(58); break;
-                        case 63: board[60] = board[63]; board[63] = null; c = board[60].GetComponent<Chess>(); c.SetCoords(60); break;
-                    } 
-                }
-                else if(play.flag == Move.EnPassantCaptureFlag)
-                {
-                    Chess temp = board[play.enPassantSquare].GetComponent<Chess>();
-                    Destroy(board[play.enPassantSquare]);
-                    board[play.enPassantSquare] = null;
-                }
-                else if(play.flag == Move.PromoteToQueenFlag)
-                {
-                    if(!whiteToMove)
-                        board[play.targetSquare].GetComponent<SpriteRenderer>().sprite = c.white_queen;
-                    else
-                        board[play.targetSquare].GetComponent<SpriteRenderer>().sprite = c.black_queen;
-                }
-                MoveGenerator.lastMove = play;
+                playMoveOnBoards(play);
                 MoveGenerator.GenerateMoves(ref ar, bitboardObject);
             } else {
                 c.SetCoords(startloc);
@@ -198,18 +168,64 @@ public class Game : MonoBehaviour
         }
     }
 
-    public void playAIMove()
+    public void playMoveOnBoards(Move play)
     {
-        Move play = AI.rootNegaMax(1, ref bitboardObject);
+        //int captureIndex = -1;
+        if(board[endloc]) 
+        {
+            Chess temp = board[endloc].GetComponent<Chess>();
+            //captureIndex = temp.pieceToBitboardValue;
+            Destroy(board[endloc]);
+        }
+        board[endloc] = board[startloc];
+        board[startloc] = null;
+        c.SetCoords(endloc);
+        whiteToMove = !whiteToMove;
+        int interestSquare = bitboardObject.playMove(play);
+        if(play.flag == Move.CastleFlag)
+        {
+            switch(interestSquare)
+            {
+                case 0: board[2] = board[0]; board[0] = null; c = board[2].GetComponent<Chess>(); c.SetCoords(2); break;
+                case 7: board[4] = board[7]; board[7] = null; c = board[4].GetComponent<Chess>(); c.SetCoords(4); break;
+                case 56: board[58] = board[56]; board[56] = null; c = board[58].GetComponent<Chess>(); c.SetCoords(58); break;
+                case 63: board[60] = board[63]; board[63] = null; c = board[60].GetComponent<Chess>(); c.SetCoords(60); break;
+            } 
+        }
+        else if(play.flag == Move.EnPassantCaptureFlag)
+        {
+            Chess temp = board[play.enPassantSquare].GetComponent<Chess>();
+            Destroy(board[play.enPassantSquare]);
+            board[play.enPassantSquare] = null;
+        }
+        else if(play.flag == Move.PromoteToQueenFlag)
+        {
+            if(!whiteToMove)
+                board[play.targetSquare].GetComponent<SpriteRenderer>().sprite = c.white_queen;
+            else
+                board[play.targetSquare].GetComponent<SpriteRenderer>().sprite = c.black_queen;
+        }
+        MoveGenerator.lastMove = play;
     }
 
-    public ulong Perft(int depth)
+    public void playAIMove()
+    {
+        Move play = AI.rootNegaMax(3, ref bitboardObject);
+        startloc = play.startSquare;
+        endloc = play.targetSquare;
+        c = board[startloc].GetComponent<Chess>();
+        playMoveOnBoards(play);
+    }
+    public ulong Perft(int depth, Move parentMove)
     {
         Move[] test = new Move[256];
         int n_moves, i;
         ulong nodes = 0;
-
+        MoveGenerator.lastMove = parentMove;
         n_moves = MoveGenerator.GenerateMoves(ref test, bitboardObject);
+        if(1 == perftDepth)
+            for(int var = 0; var < n_moves; var++)
+                Debug.Log(standardChessBoardPosistions[test[var].startSquare] + standardChessBoardPosistions[test[var].targetSquare] + ": 1");
         whiteToMove = !whiteToMove;
         if(n_moves == 0) return 0;
 
@@ -220,12 +236,9 @@ public class Game : MonoBehaviour
             Move play = test[i];
             int captureIndex = bitboardObject.playMove(play);
             ulong thisNodes = 0;
-            thisNodes = Perft(depth-1);
-            if(depth == 3)
-            {
-                //Debug.Log(play.startSquare + " || " + play.targetSquare + " # " + thisNodes);
-                ;
-            }
+            thisNodes = Perft(depth-1, play);
+            if(depth == 2 && standardChessBoardPosistions[parentMove.startSquare] == "c7" && standardChessBoardPosistions[parentMove.targetSquare] == "c6")
+                Debug.Log(standardChessBoardPosistions[play.startSquare] + standardChessBoardPosistions[play.targetSquare] + ": " + thisNodes);
             nodes += thisNodes;
             bitboardObject.undoMove(play,captureIndex);
         }
@@ -258,5 +271,46 @@ public class Game : MonoBehaviour
             i++;
             j++;
         }
+        j++;
+        if(j >= fen.Length) return;
+        if(fen[j] == 'w') whiteToMove= true; 
+        else whiteToMove = false;
+        j += 2;
+        while(fen[j] != ' ')
+        {
+            j++;
+        }
+        j++;
+        if(fen[j] != '-')
+        {
+            int storeEnPassantTargetSquare = -1;
+            string enPassantTargetSquare = fen.Substring(j, 2);
+            for(int var = 0; var < standardChessBoardPosistions.Length; var++)
+                if(enPassantTargetSquare == standardChessBoardPosistions[var])
+                    storeEnPassantTargetSquare = var;
+            
+            if(storeEnPassantTargetSquare != -1)
+            {
+                Move setEnPassantPossible;
+                if(storeEnPassantTargetSquare > 15 && storeEnPassantTargetSquare < 24)
+                    setEnPassantPossible = new Move(storeEnPassantTargetSquare - 8, storeEnPassantTargetSquare + 8, Move.PawnTwoUpFlag);
+                else
+                    setEnPassantPossible = new Move(storeEnPassantTargetSquare + 8, storeEnPassantTargetSquare - 8, Move.PawnTwoUpFlag);
+                
+                MoveGenerator.lastMove = setEnPassantPossible;
+            }
+        }
     }
+
+    public string[] standardChessBoardPosistions = 
+    {
+        "h1", "g1", "f1", "e1", "d1", "c1", "b1", "a1",
+        "h2", "g2", "f2", "e2", "d2", "c2", "b2", "a2",
+        "h3", "g3", "f3", "e3", "d3", "c3", "b3", "a3",
+        "h4", "g4", "f4", "e4", "d4", "c4", "b4", "a4",
+        "h5", "g5", "f5", "e5", "d5", "c5", "b5", "a5",
+        "h6", "g6", "f6", "e6", "d6", "c6", "b6", "a6",
+        "h7", "g7", "f7", "e7", "d7", "c7", "b7", "a7",
+        "h8", "g8", "f8", "e8", "d8", "c8", "b8", "a8"
+    };
 }
