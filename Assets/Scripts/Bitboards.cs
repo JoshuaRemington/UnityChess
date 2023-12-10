@@ -44,15 +44,10 @@ public class Bitboards
 	public const ulong notHFile = ~(FileA << 7);
     public const ulong notGFile = ~(FileA << 6);
     public const ulong notGHFiles = notGFile & notHFile;
-
-    //public bool whiteQueenCastle = true;
-    public ulong whiteQueenCastleMask;
-    //public bool whiteKingCastle = true;
-    public ulong whiteKingCastleMask;
-    //public bool blackQueenCastle = true;
-    public ulong blackQueenCastleMask;
-    //public bool blackKingCastle = true;
-    public ulong blackKingCastleMask;
+    //these masks check to see if there are pices along the castle
+    public ulong whiteQueenCastleMask,whiteKingCastleMask, blackQueenCastleMask, blackKingCastleMask;
+    //these masks check to see if any of the squares the king crosses on castle are in opponent's attack map, only changes from castle mask for queenside, for kingside, use the above masks
+    public ulong whiteAttackOnQueenCastleMask,blackAttackOnQueenCastleMask;
     public Stack<GameState> stackForGameStates = new Stack<GameState>();
     public GameState currentGameState;
     
@@ -157,7 +152,8 @@ public class Bitboards
 
     public int playMove(Move m)
     {
-        stackForGameStates.Push(currentGameState);
+        GameState copyOfCurrentGameState = new GameState(currentGameState.whiteKingCastle, currentGameState.blackKingCastle, currentGameState.whiteQueenCastle, currentGameState.blackQueenCastle);
+        stackForGameStates.Push(copyOfCurrentGameState);
         int arrayIndex = findIndex[m.startSquare];  
         int captureIndex = findIndex[m.targetSquare];
         findIndex[m.targetSquare] = findIndex[m.startSquare];
@@ -300,14 +296,11 @@ public class Bitboards
             setSquare(ref pieces[enemyIndex], m.enPassantSquare);
             makeMove(captureIndex, -1, m.enPassantSquare);
             findIndex[m.enPassantSquare] = captureIndex;
+            findIndex[m.targetSquare] = 0;
         }  
-        else if (captureIndex != 0)
-        {
-            setSquare(ref pieces[enemyIndex], m.targetSquare);
-            makeMove(captureIndex, -1, m.targetSquare);
-        }
         else if(m.flag == Move.CastleFlag)
         {
+            findIndex[m.targetSquare] = 0;
             switch(m.targetSquare)
             {
                 case 1: 
@@ -344,6 +337,11 @@ public class Bitboards
                     break;
             }
         }
+        else if (captureIndex != 0)
+        {
+            setSquare(ref pieces[enemyIndex], m.targetSquare);
+            makeMove(captureIndex, -1, m.targetSquare);
+        }
 
         if(m.flag > 3) 
         {
@@ -352,18 +350,29 @@ public class Bitboards
             setSquare(ref pawns[this.whiteTurn ? 0 : 1], m.startSquare);
         }
     }
+    public void printFindIndex()
+    {
+        for(int i = 0; i < 64; i++)
+            Debug.Log(findIndex[i]);
+    }
 
     public void createCastlingMasks()
     {
         whiteKingCastleMask = 1UL << 1;
         whiteKingCastleMask |= 1UL << 2;
         
+        whiteAttackOnQueenCastleMask = 1UL << 4;
+        whiteAttackOnQueenCastleMask |= 1UL << 5;
+
         whiteQueenCastleMask = 1UL << 4;
         whiteQueenCastleMask |= 1UL << 5;
         whiteQueenCastleMask |= 1UL << 6;
 
         blackKingCastleMask = 1UL << 57;
         blackKingCastleMask |= 1UL << 58;
+
+        blackAttackOnQueenCastleMask = 1UL << 60;
+        blackAttackOnQueenCastleMask |= 1UL << 61;
         
         blackQueenCastleMask = 1UL << 60;
         blackQueenCastleMask |= 1UL << 61;

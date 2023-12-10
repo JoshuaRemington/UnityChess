@@ -8,7 +8,7 @@ public class MoveGenerator
     public static ulong[] kingBitboards = new ulong[64];
     public static ulong[] knightBitboards = new ulong[64];
     public static ulong[,] pawnAttacks = new ulong[2,64];
-    private static int currIndex;
+    private static ulong currIndex;
     private static int player, enemyPlayer;
     
     //if generateForWhite, white is next to move
@@ -21,7 +21,7 @@ public class MoveGenerator
     //2-7 = white piece bitboard, 8-13 = black piece bitboards
     public static int friendlyKingSquare;
     public static Move lastMove = new Move(-1,-1);
-    public static int GenerateMoves(ref Move[] moveList, Bitboards bitboardObject)
+    public static ulong GenerateMoves(ref Move[] moveList, Bitboards bitboardObject)
     {
         inCheck = false;
         inDoubleCheck = false;
@@ -178,6 +178,9 @@ public class MoveGenerator
         opponentAttackMap |= kingBitboards[bitboardObject.kings[enemyPlayer]];
     }
 
+    //current error, when we get rid of horizontal pin on pawn with a piece of the same color as the one that pins the pawn, we can get a diagonal move even though there are no pieces to capture and no en passant possible
+    //further error investigation, we have a pawn that is incorrectly in that diagonal location allowing for that legal move, why tho???
+    //error case confirmed, undoing a en passant move following by moving the pawn that double pushed to a single push and recapturing it, then undoing that move will duplicate pawn
     private static void GeneratePawnMoves(ref Move[] moveList, Bitboards bitboardObject)
     {
         ulong pawnBoard = bitboardObject.pawns[player];
@@ -193,24 +196,24 @@ public class MoveGenerator
         if(generateForWhite)
         {
             pushDirection = 8;
-            push |= (pawnBoard & ~(diagonalPinnedPieces)) << 8;
+            push |= pawnBoard << 8;
             push &= emptySquaresBitboard;
             doublePush = push & Bitboards.Rank3;
             doublePush = doublePush << 8;
             doublePush &= emptySquaresBitboard;
             push |= (orthgonalPinnedPawns << 8) & emptySquaresBitboard & orthogonalPinRays;
-            push |= ((((orthgonalPinnedPawns & Bitboards.Rank2) << 8) & emptySquaresBitboard) << 8) & emptySquaresBitboard & orthogonalPinRays;
+            doublePush |= ((((orthgonalPinnedPawns & Bitboards.Rank2) << 8) & emptySquaresBitboard) << 8) & emptySquaresBitboard & orthogonalPinRays;
         }
         else
         {
             pushDirection = -8;
-            push |= (pawnBoard & ~(diagonalPinnedPieces)) >> 8;
+            push |= pawnBoard >> 8;
             push &= emptySquaresBitboard;
             doublePush = push & Bitboards.Rank6;
             doublePush = doublePush >> 8;
             doublePush &= emptySquaresBitboard;
             push |= (orthgonalPinnedPawns >> 8) & emptySquaresBitboard & orthogonalPinRays;
-            push |= ((((orthgonalPinnedPawns & Bitboards.Rank7) >> 8) & emptySquaresBitboard) >> 8) & emptySquaresBitboard & orthogonalPinRays;
+            doublePush |= ((((orthgonalPinnedPawns & Bitboards.Rank7) >> 8) & emptySquaresBitboard) >> 8) & emptySquaresBitboard & orthogonalPinRays;
         }
         if(inCheck)
         {
@@ -239,7 +242,7 @@ public class MoveGenerator
         {
             ulong enPassantSquares = (1ul << lastMove.targetSquare+1) & Bitboards.notAFile;
             enPassantSquares |= (1ul << lastMove.targetSquare-1) & Bitboards.notHFile;
-            enPassantSquares &= pawnBoard;
+            enPassantSquares &= (pawnBoard | diagonalPinnedPawns);
             ulong testForCaptureOnCheck = 1ul << lastMove.targetSquare;
             if(inCheck && (testForCaptureOnCheck & checkingSquares) == 0) enPassantSquares = 0;
             while(enPassantSquares != 0)
@@ -247,6 +250,10 @@ public class MoveGenerator
                 int i = tzcnt(enPassantSquares);
                 enPassantSquares &= enPassantSquares-1;
                 int landingSquare = lastMove.targetSquare + pushDirection;
+                ulong checkPin = new ulong();
+                Bitboards.setSquare(ref checkPin, i);
+                ulong testDiagonalPin = 1ul << landingSquare;
+                if((checkPin & diagonalPinnedPawns) != 0 && (testDiagonalPin & diagonalPinRays) == 0) continue;
                 if(!InCheckAfterEnPassant(i, landingSquare, lastMove.targetSquare, bitboardObject))
                 {
                     Move m = new Move(i, landingSquare, Move.EnPassantCaptureFlag, lastMove.targetSquare);
@@ -386,8 +393,8 @@ public class MoveGenerator
 
         if(generateForWhite)
         {
-            ulong test1 = bitboardObject.occupiedSquares & bitboardObject.whiteKingCastleMask;
-            ulong test2 = bitboardObject.occupiedSquares & bitboardObject.whiteQueenCastleMask;
+            ulong test1 = (bitboardObject.occupiedSquares | opponentAttackMap) & bitboardObject.whiteKingCastleMask;
+            ulong test2 = (bitboardObject.occupiedSquares & bitboardObject.whiteQueenCastleMask) | (opponentAttackMap & bitboardObject.whiteAttackOnQueenCastleMask);
             if(bitboardObject.currentGameState.whiteKingCastle && test1 == 0 && (bitboardObject.rooks[0] & whiteKingRookCheck) != 0)
             {
                 Move m = new Move(3, 1, Move.CastleFlag);
@@ -401,8 +408,8 @@ public class MoveGenerator
         }
         else
         {
-            ulong test1 = bitboardObject.occupiedSquares & bitboardObject.blackKingCastleMask;
-            ulong test2 = bitboardObject.occupiedSquares & bitboardObject.blackQueenCastleMask;
+            ulong test1 = (bitboardObject.occupiedSquares | opponentAttackMap) & bitboardObject.blackKingCastleMask;
+            ulong test2 = (bitboardObject.occupiedSquares & bitboardObject.blackQueenCastleMask) | (opponentAttackMap & bitboardObject.blackAttackOnQueenCastleMask);;
             if(bitboardObject.currentGameState.blackKingCastle && test1 == 0 && (bitboardObject.rooks[1] & blackKingRookCheck) != 0)
             {
                 Move m = new Move(59, 57, Move.CastleFlag);

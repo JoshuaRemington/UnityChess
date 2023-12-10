@@ -9,10 +9,10 @@ public class AI
     {
         Move[] moves = new Move[256];
         Move bestMove = null;
-        int num_moves = new int();
+        ulong num_moves = new ulong();
         int max = -int.MaxValue;
         num_moves = MoveGenerator.GenerateMoves(ref moves, bitboard);
-        for(int i = 0; i < num_moves; i++)
+        for(ulong i = 0; i < num_moves; i++)
         {
            Move test = moves[i];
            int captureIndex = bitboard.playMove(test);
@@ -31,10 +31,10 @@ public class AI
     {
         if(depth == 0) return evaluate(bitboard);
         Move[] moves = new Move[256];
-        int num_moves = new int();
+        ulong num_moves = new ulong();
         int max = -int.MaxValue;
         num_moves = MoveGenerator.GenerateMoves(ref moves, bitboard);
-        for(int i = 0; i < num_moves; i++)
+        for(ulong i = 0; i < num_moves; i++)
         {
            Move test = moves[i];
            int captureIndex = bitboard.playMove(test);
