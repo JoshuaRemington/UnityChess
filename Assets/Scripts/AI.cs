@@ -5,47 +5,53 @@ using static Unity.Mathematics.math;
 
 public class AI
 {
+    private static ulong numberOfNodes;
     public static Move rootNegaMax (int depth, ref Bitboards bitboard)
     {
+        numberOfNodes = 0;
         Move[] moves = new Move[256];
         Move bestMove = null;
         ulong num_moves = new ulong();
         int max = -int.MaxValue;
         num_moves = MoveGenerator.GenerateMoves(ref moves, bitboard);
+        if(num_moves == 0) return Move.nullMove;
         for(ulong i = 0; i < num_moves; i++)
         {
-           Move test = moves[i];
-           int captureIndex = bitboard.playMove(test);
-           int score = -negaMax(depth-1, ref bitboard);
-           bitboard.undoMove(test, captureIndex);
-           if(score > max) 
-           {
-                max = score;
-                bestMove = moves[i];
-           }
+            Move test = moves[i];
+            int captureIndex = bitboard.playMove(test);
+            int score = -negaMax(depth-1, max, -max,ref bitboard, test);
+            bitboard.undoMove(test, captureIndex);
+            if(score > max) 
+            {
+                    max = score;
+                    bestMove = moves[i];
+            }
         }
+        Debug.Log("AI leaf nodes reached: " + numberOfNodes);
         return bestMove;
     }
 
-    public static int negaMax(int depth, ref Bitboards bitboard)
+    public static int negaMax(int depth, int alpha, int beta, ref Bitboards bitboard, Move parentMove)
     {
-        if(depth == 0) return evaluate(bitboard);
+        if(depth == 0){numberOfNodes++; return evaluate(ref bitboard);}
         Move[] moves = new Move[256];
         ulong num_moves = new ulong();
-        int max = -int.MaxValue;
+        MoveGenerator.lastMove = parentMove;
         num_moves = MoveGenerator.GenerateMoves(ref moves, bitboard);
         for(ulong i = 0; i < num_moves; i++)
         {
-           Move test = moves[i];
-           int captureIndex = bitboard.playMove(test);
-           int score = -negaMax(depth-1, ref bitboard);
-           bitboard.undoMove(test, captureIndex);
-           if(score > max) max = score;
+            Move test = moves[i];
+            int captureIndex = bitboard.playMove(test);
+            int score = -negaMax(depth-1, -beta, -alpha, ref bitboard, test);
+            bitboard.undoMove(test, captureIndex);
+            if(score >= beta)
+                return beta;
+            if(score > alpha) alpha = score;
         }
-        return max;
+        return alpha;
     }
     
-    public static int evaluate(Bitboards bitboard)
+    public static int evaluate(ref Bitboards bitboard)
     {
         int player = bitboard.whiteTurn ? 0 : 1;
         int value = 0;
@@ -55,7 +61,6 @@ public class AI
         ulong bishopValue = bitboard.bishops[player];
         ulong rookValue = bitboard.rooks[player];
         ulong queenValue = bitboard.queens[player];
-        int kingValue = bitboard.kings[player];
 
         while(pawnValue != 0)
         {

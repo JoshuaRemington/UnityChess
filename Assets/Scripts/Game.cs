@@ -26,7 +26,7 @@ public class Game : MonoBehaviour
     // Start is called before the first frame update
     //private string standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     private string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    private int perftDepth = 7;
+    private int perftDepth = 1;
     void Start()
     {
         parseFen(fen, ref board);
@@ -123,13 +123,13 @@ public class Game : MonoBehaviour
     int startloc, endloc;
     Chess c;
     Move[] ar = new Move[256];
-    async void Update()
+    void Update()
     {
-        /*if(whiteToMove) 
+        if(whiteToMove) 
         {
             playAIMove();
             MoveGenerator.GenerateMoves(ref ar, bitboardObject);
-        }*/
+        }
         Vector3 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
         if (Input.GetMouseButtonDown(0))
         {
@@ -287,7 +287,7 @@ public class Game : MonoBehaviour
 
     public void playAIMove()
     {
-        Move play = AI.rootNegaMax(3, ref bitboardObject);
+        Move play = AI.rootNegaMax(5, ref bitboardObject);
         startloc = play.startSquare;
         endloc = play.targetSquare;
         c = board[startloc].GetComponent<Chess>();
@@ -301,9 +301,9 @@ public class Game : MonoBehaviour
         bool correctPath = print;
         MoveGenerator.lastMove = parentMove;
         n_moves = MoveGenerator.GenerateMoves(ref test, bitboardObject);
-        if(depth == perftDepth)
-                for(ulong var = 0; var < n_moves; var++)
-                    Debug.Log(standardChessBoardPosistions[test[var].startSquare] + standardChessBoardPosistions[test[var].targetSquare] + ": " + 1);
+        //if(depth == perftDepth)
+                //for(ulong var = 0; var < n_moves; var++)
+                    //Debug.Log(standardChessBoardPosistions[test[var].startSquare] + standardChessBoardPosistions[test[var].targetSquare] + ": " + 1);
         /*
         if(depth == 1 && print)
             for(ulong var = 0; var < n_moves; var++)
@@ -314,7 +314,6 @@ public class Game : MonoBehaviour
         if(depth == 1 && print)
             Debug.Log("THIS IS A SEPERATION OF MOVES");
             */
-        whiteToMove = !whiteToMove;
         if(n_moves == 0) return (ulong)0;
 
         if(depth == 1)
@@ -344,8 +343,8 @@ public class Game : MonoBehaviour
             //if(depth == 2 && standardChessBoardPosistions[parentMove.startSquare] == "d6" && standardChessBoardPosistions[parentMove.targetSquare] == "d5")
               //  Debug.Log(standardChessBoardPosistions[play.startSquare] + standardChessBoardPosistions[play.targetSquare] + ": " + thisNodes);
               */
-            if(depth == perftDepth)
-                Debug.Log(standardChessBoardPosistions[play.startSquare] + standardChessBoardPosistions[play.targetSquare] + ": " + thisNodes);
+            //if(depth == perftDepth)
+                //Debug.Log(standardChessBoardPosistions[play.startSquare] + standardChessBoardPosistions[play.targetSquare] + ": " + thisNodes);
                 
             nodes += thisNodes;
             bitboardObject.undoMove(play,captureIndex);
