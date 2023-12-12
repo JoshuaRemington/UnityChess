@@ -21,7 +21,7 @@ public class Game : MonoBehaviour
     private MoveGenerator m = new MoveGenerator();
     private Magic s = new Magic();
 
-    //private bool gameOver = false;
+    private bool gameOver = false;
 
     // Start is called before the first frame update
     //private string standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -125,6 +125,8 @@ public class Game : MonoBehaviour
     Move[] ar = new Move[256];
     void Update()
     {
+        while(gameOver)
+            ;
         if(whiteToMove) 
         {
             playAIMove();
@@ -288,6 +290,7 @@ public class Game : MonoBehaviour
     public void playAIMove()
     {
         Move play = AI.rootNegaMax(5, ref bitboardObject);
+        if(play == Move.nullMove) {gameOver = true; return;}
         startloc = play.startSquare;
         endloc = play.targetSquare;
         c = board[startloc].GetComponent<Chess>();
