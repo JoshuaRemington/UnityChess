@@ -8,7 +8,7 @@ using System;
 public class Game : MonoBehaviour
 {
     public GameObject chesspiece;
-    public GameObject MoveTile;
+    public GameObject MoveTile, lastMoveStart, lastMoveEnd;
     public Text text;
     private GameObject[] board = new GameObject[64]; 
 
@@ -90,6 +90,36 @@ public class Game : MonoBehaviour
         return pos;
     }
 
+    public void displayLastMoveOnBoard(int startPos, int endPos)
+    {
+        if(lastMoveStart)
+        {
+            Destroy(lastMoveStart);
+            lastMoveStart = null;
+        }
+        if(lastMoveEnd)
+        {
+            Destroy(lastMoveEnd);
+            lastMoveEnd = null;
+        }
+        float newZ = -0.9f;
+        lastMoveStart = Instantiate(MoveTile);
+        Vector3 newPosition = lastMoveStart.transform.position;
+        newPosition.z = newZ;
+        lastMoveStart.transform.position = newPosition;
+        MoveTile m = lastMoveStart.GetComponent<MoveTile>();
+        m.Place(startPos);
+        lastMoveStart.GetComponent<SpriteRenderer>().color = Color.yellow;
+
+        lastMoveEnd = Instantiate(MoveTile);
+        newPosition = lastMoveEnd.transform.position;
+        newPosition.z = newZ;
+        lastMoveEnd.transform.position = newPosition;
+        m = lastMoveEnd.GetComponent<MoveTile>();
+        m.Place(endPos);
+        lastMoveEnd.GetComponent<SpriteRenderer>().color = Color.yellow;
+    }
+
     public void createMoveTiles(int pos)
     {
         float newZ = -0.9f;
@@ -117,7 +147,7 @@ public class Game : MonoBehaviour
         }
     }
     
-
+    Move lastMoveOnBoard = Move.nullMove;
     public GameObject selectedObject;
     Vector3 offset;
     int startloc, endloc;
@@ -127,6 +157,11 @@ public class Game : MonoBehaviour
     {
         while(gameOver)
             ;
+        if(MoveGenerator.lastMove != lastMoveOnBoard)
+        {
+            displayLastMoveOnBoard(MoveGenerator.lastMove.startSquare, MoveGenerator.lastMove.targetSquare);
+            lastMoveOnBoard = MoveGenerator.lastMove;
+        }
         if(whiteToMove) 
         {
             playAIMove();
@@ -161,6 +196,14 @@ public class Game : MonoBehaviour
             endloc = this.TranslateMouseToPos(mousePosition);
             Move play = new Move(startloc,endloc);
             play = play.Contains(ar, play);
+            if(play.isPromotion)
+            {
+                bool waitTillUserSelects = true;
+                while(waitTillUserSelects)
+                {
+                    waitTillUserSelects = false;
+                }
+            }
             if(!Move.SameMove(play, Move.nullMove))
             {
                 playMoveOnBoards(play);
@@ -289,7 +332,7 @@ public class Game : MonoBehaviour
 
     public void playAIMove()
     {
-        Move play = AI.rootNegaMax(5, ref bitboardObject);
+        Move play = AI.startSearch(6, ref bitboardObject);
         if(play == Move.nullMove) {gameOver = true; return;}
         startloc = play.startSquare;
         endloc = play.targetSquare;
