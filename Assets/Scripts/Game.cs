@@ -16,8 +16,10 @@ public class Game : MonoBehaviour
     public Stack<Move> moveHistory = new Stack<Move>();
     public Stack<int> captureIndexHistory = new Stack<int>();
     Bitboards bitboardObject = new Bitboards();
-
+    public bool AIPlayingWhite = false;
+    public bool AIPlayingBlack = false;
     private bool whiteToMove = true;
+    private bool GameInProgress;
     private MoveGenerator m = new MoveGenerator();
     private Magic s = new Magic();
 
@@ -27,8 +29,13 @@ public class Game : MonoBehaviour
     //private string standardFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     private string fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     private int perftDepth = 1;
-    void Start()
+
+    public void GameStart(string gameMode)
     {
+        if(gameMode == "bvb") {AIPlayingWhite = true; AIPlayingBlack = true;}
+        else if(gameMode == "bw") AIPlayingWhite = true;
+        else if(gameMode == "bb") AIPlayingBlack = true;
+        GameInProgress = true;
         parseFen(fen, ref board);
         bitboardObject.initiateBitboardStartPosition(fen);
         s.Create();
@@ -153,16 +160,29 @@ public class Game : MonoBehaviour
     int startloc, endloc;
     Chess c;
     Move[] ar = new Move[256];
+    string gameOverCondition;
     void Update()
     {
+        if(GameInProgress && MoveGenerator.inCheck && ar[0] == null) {gameOver = true; gameOverCondition = whiteToMove ? "Checkmate: Black Wins!" : "Checkmate: White Wins!";}
+        else if(GameInProgress && ar[0] == null) {gameOver = true; gameOverCondition = "Stalemate: Draw!";}
         while(gameOver)
-            ;
-        if(MoveGenerator.lastMove != lastMoveOnBoard)
+        {
+            GameInProgress = false;
+            gameOver = false;
+            Debug.Log(gameOverCondition);
+            //provide menu to user again. Also create a menu dumbass
+        }
+        if(MoveGenerator.lastMove != lastMoveOnBoard  && GameInProgress)
         {
             displayLastMoveOnBoard(MoveGenerator.lastMove.startSquare, MoveGenerator.lastMove.targetSquare);
             lastMoveOnBoard = MoveGenerator.lastMove;
         }
-        if(whiteToMove) 
+        if(whiteToMove && AIPlayingWhite) 
+        {
+            playAIMove();
+            MoveGenerator.GenerateMoves(ref ar, bitboardObject);
+        }
+        if(!whiteToMove && AIPlayingBlack) 
         {
             playAIMove();
             MoveGenerator.GenerateMoves(ref ar, bitboardObject);
@@ -338,6 +358,7 @@ public class Game : MonoBehaviour
         endloc = play.targetSquare;
         c = board[startloc].GetComponent<Chess>();
         playMoveOnBoards(play);
+        return;
     }
     public ulong Perft(int depth, Move parentMove, bool print)
     {

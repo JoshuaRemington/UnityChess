@@ -9,7 +9,7 @@ public class AI
     //private static ulong numberOfNodes;
     private static Stopwatch stopwatch;
 
-    private static int timerForAIMove = 1000;
+    private static int timerForAIMove = 5000;
     public static Move startSearch(int depth, ref Bitboards bitboard)
     {
         Move bestMove = Move.nullMove;

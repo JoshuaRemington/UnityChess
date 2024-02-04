@@ -14,7 +14,7 @@ public class MoveGenerator
     //if generateForWhite, white is next to move
     private static bool generateForWhite = true; 
     private static bool inDoubleCheck = false;
-    private static bool inCheck = false;
+    public static bool inCheck = false;
     private static ulong emptySquaresBitboard, friendlyBitboard, opponentBitboard, diagonalPinnedPieces, orthogonalPinnedPieces, opponentAttackMap, checkingSquares, orthogonalPinRays, diagonalPinRays, raysOnKingInCheck;
     private static ulong enemyOrthogonalSliders, enemyDiagonalSliders;
     private static ulong whiteKingRookCheck, blackKingRookCheck, whiteQueenRookCheck, blackQueenRookCheck;
