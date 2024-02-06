@@ -32,6 +32,7 @@ public class Game : MonoBehaviour
 
     public void GameStart(string gameMode)
     {
+        whiteToMove = true;
         if(gameMode == "bvb") {AIPlayingWhite = true; AIPlayingBlack = true;}
         else if(gameMode == "bw") AIPlayingWhite = true;
         else if(gameMode == "bb") AIPlayingBlack = true;
@@ -49,10 +50,10 @@ public class Game : MonoBehaviour
         TimeSpan elapsedTime = endTime - startTime;
         double timeTaken = elapsedTime.TotalMilliseconds;
         
-        string temp2 = "\nExecution Time: \n" + timeTaken.ToString();
-        text.text = temp + temp2;
+        //string temp2 = "\nExecution Time: \n" + timeTaken.ToString();
+        //text.text = temp + temp2;
         MoveGenerator.lastMove = lastMove;
-        MoveGenerator.GenerateMoves(ref ar, bitboardObject);
+        Debug.Log(MoveGenerator.GenerateMoves(ref ar, bitboardObject));
     }
 
     public GameObject Create(string name, int pos) 
@@ -87,11 +88,11 @@ public class Game : MonoBehaviour
         length of board: 10
         Length of each square: 1.25
         */
-        if(mouse.x > 5.02 || mouse.x < -5.02 || mouse.y > 5.02 || mouse.y < -5.02)
+        if(mouse.x > 4.9 || mouse.x < -5.3 || mouse.y > 5.1 || mouse.y < -5.1)
             return -1;
 
-        int row = (int)((mouse.y - 5) / 1.25);
-        int col = (int)((mouse.x + 5) / 1.25);
+        int row = (int)((mouse.y - 5.3) / 1.25);
+        int col = (int)((mouse.x + 5.1) / 1.25);
         
         int pos = col - (row * 8);
         return pos;
@@ -127,6 +128,7 @@ public class Game : MonoBehaviour
         lastMoveEnd.GetComponent<SpriteRenderer>().color = Color.yellow;
     }
 
+    public Sprite move_tile;
     public void createMoveTiles(int pos)
     {
         float newZ = -0.9f;
@@ -140,6 +142,7 @@ public class Game : MonoBehaviour
                     newPosition.z = newZ;
                     moveTiles[i].transform.position = newPosition;
                     MoveTile m = moveTiles[i].GetComponent<MoveTile>();
+                    this.GetComponent<SpriteRenderer>().sprite = move_tile;
                     m.Place(i);
                 }
         }
@@ -163,6 +166,7 @@ public class Game : MonoBehaviour
     string gameOverCondition;
     void Update()
     {
+        //if(GameInProgress && ar[0] == null) MoveGenerator.GenerateMoves(ref ar, bitboardObject);
         if(GameInProgress && MoveGenerator.inCheck && ar[0] == null) {gameOver = true; gameOverCondition = whiteToMove ? "Checkmate: Black Wins!" : "Checkmate: White Wins!";}
         else if(GameInProgress && ar[0] == null) {gameOver = true; gameOverCondition = "Stalemate: Draw!";}
         while(gameOver)

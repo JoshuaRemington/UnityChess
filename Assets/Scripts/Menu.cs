@@ -4,28 +4,34 @@ using UnityEngine;
 
 public class Menu : MonoBehaviour
 {
-    //public GameObject menu;
+    public GameObject menu;
+    private Game gameReference;
+
+    void Start()
+    {
+        gameReference = GetComponent<Game>();
+    }
     public void playerVsPlayer() 
     {
-        //menu.SetActive(false);
-        Debug.Log("pvp");
+        menu.SetActive(false);
+        gameReference.GameStart("");
     }
 
     public void botPlaysWhite() 
     {
-        //menu.SetActive(false);
-        Debug.Log("bot white");
+        menu.SetActive(false);
+        gameReference.GameStart("bw");
     }
 
     public void botPlaysBlack()
     {
-        //menu.SetActive(false);
-        Debug.Log("bot black");
+        menu.SetActive(false);
+        gameReference.GameStart("bb");
     }
 
     public void botVsBot() 
     {
-        //menu.SetActive(false);
-        Debug.Log("bvb");
+        menu.SetActive(false);
+        gameReference.GameStart("bvb");
     }
 }

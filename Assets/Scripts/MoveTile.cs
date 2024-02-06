@@ -14,7 +14,7 @@ public class MoveTile : MonoBehaviour
     public void Place(int pos)
     {
         //4.48
-        float x = -4.48f + (1.28f * (pos % 8f));  //calculation for the x corrdinates
+        float x = -4.68f + (1.28f * (pos % 8f));  //calculation for the x corrdinates
         float temp = pos / 8;
         float y = 4.48f - (1.28f * temp);  //calculation for the y coordinates
 

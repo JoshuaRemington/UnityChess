@@ -47,7 +47,7 @@ public class Chess : MonoBehaviour
     public void SetCoords(int pos) 
     { 
         //easy algorithm based on the board size and square size to put onto the correct square
-        float x = -4.5f + (1.28f * (pos % 8f));   //place correctly on x axis
+        float x = -4.7f + (1.28f * (pos % 8f));   //place correctly on x axis
         float temp = pos / 8;
         float y = 4.5f - (1.28f * temp);  //place correctly on y axis
 
