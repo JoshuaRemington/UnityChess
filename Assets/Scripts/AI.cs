@@ -68,6 +68,11 @@ public class AI
         int score = int.MinValue;
         MoveGenerator.lastMove = parentMove;
         num_moves = MoveGenerator.GenerateMoves(ref moves, bitboard);
+        if(num_moves == 0)
+        {
+            if(MoveGenerator.inCheck) return (-10000 - depth);
+            return 0;
+        }
         for(ulong i = 0; i < num_moves; i++)
         {
             Move test = moves[i];
