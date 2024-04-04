@@ -2,7 +2,7 @@
 Welcome to the Unity Chess Engine repository! This project aims to provide a simple yet functional chess engine implemented in Unity.
 
 ## Overview
-This chess engine is designed to run within the Unity game engine environment. It provides the core logic for playing chess, including move generation, validation, and basic AI capabilities.
+This chess engine is designed to run within the Unity game engine environment. Leveraging bitwise operations for unparalleled efficiency, this engine employs the Minimax algorithm and Alpha-Beta pruning to deliver strategic gameplay experiences.
 
 ## Features
 Chess Logic: Implements all the standard rules of chess, including piece movement, capturing, check, and checkmate.
@@ -12,7 +12,7 @@ Customization: Allows for customization of board and piece textures, as well as 
 Getting Started
 To get started with the Unity Chess Engine, follow these steps:
 
-Clone the Repository: Clone this repository to your local machine using git clone https://github.com/your-username/unity-chess-engine.git.
+Clone the Repository: Clone this repository to your local machine.
 
 Open in Unity: Open the project in Unity by selecting the root folder of the repository.
 
