@@ -3,6 +3,7 @@ Welcome to the Unity Chess Engine repository! This project aims to provide a sim
 
 ## Overview
 This chess engine is designed to run within the Unity game engine environment. Leveraging bitwise operations for unparalleled efficiency, this engine employs the Minimax algorithm and Alpha-Beta pruning to deliver strategic gameplay experiences.
+![image](https://github.com/JoshuaRemington/UnityChess/assets/107597790/c3025bc3-1e75-4aef-8204-814b4a3f16c8)
 
 ## Features
 Chess Logic: Implements all the standard rules of chess, including piece movement, capturing, check, and checkmate.
